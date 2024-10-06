@@ -1,0 +1,22 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.subtitle {
+  position: fixed;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 20px;
+  padding: 10px;
+  border-radius: 5px;
+  z-index: 9999;
+  white-space: nowrap;
+  max-width: 90%;
+  text-align: center;
+  display: none; /* 默认隐藏字幕，直到上传并开始 */
+}

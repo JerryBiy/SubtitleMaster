@@ -1,6 +1,7 @@
 // popup.js
 
 const ONBOARDING_KEY = "nsplus_seen_onboarding";
+const LOADED_SUBTITLE_KEY = "nsplus_loaded_subtitle";
 
 function $(id) {
   return document.getElementById(id);
@@ -180,6 +181,19 @@ async function main() {
   // Initial ping (auto-inject if needed)
   await refreshFromContent(tabId);
 
+  // Load and display previously loaded subtitle info
+  async function restoreLoadedSubtitleDisplay() {
+    const stored = await chrome.storage.local.get([LOADED_SUBTITLE_KEY]);
+    const loaded = stored[LOADED_SUBTITLE_KEY];
+    if (loaded && loaded.fileName) {
+      $(
+        "fileStatus"
+      ).textContent = `✓ Loaded ${loaded.fileName} (${loaded.cues} cues)`;
+    }
+  }
+
+  await restoreLoadedSubtitleDisplay();
+
   // Buttons: Reload Netflix + Help
   $("reloadNetflixBtn").addEventListener("click", async () => {
     try {
@@ -215,6 +229,8 @@ async function main() {
     });
     setSpinner(false);
     setStatus(resp.ok ? "Disabled." : resp.error, resp.ok);
+    // Clear the loaded subtitle display when user disables
+    // (but keep it in storage in case they re-enable)
   });
 
   $("fileInput").addEventListener("change", async (e) => {
@@ -225,6 +241,11 @@ async function main() {
       setSpinner(true);
       setSmallStatus("Reading file…");
       const text = await readFileAsText(file);
+
+      if (!text || text.trim().length === 0) {
+        throw new Error("File is empty");
+      }
+
       const languageLabel = $("languageLabel").value.trim() || "External";
 
       setSmallStatus("Loading subtitles…");
@@ -239,15 +260,46 @@ async function main() {
       setSmallStatus("");
 
       if (resp.ok) {
-        $("fileStatus").textContent = `Loaded ${file.name} (${resp.cues} cues)`;
+        const statusText = `✓ Loaded ${file.name} (${resp.cues} cues)`;
+        $("fileStatus").textContent = statusText;
         setStatus("Subtitles loaded and enabled.", true);
+        // Save the loaded subtitle info to storage
+        await chrome.storage.local.set({
+          [LOADED_SUBTITLE_KEY]: {
+            fileName: file.name,
+            cues: resp.cues,
+            timestamp: Date.now(),
+          },
+        });
       } else {
+        $("fileStatus").textContent = `✗ Failed to load`;
         setStatus(resp.error, false);
       }
     } catch (err) {
       setSpinner(false);
       setSmallStatus("");
-      setStatus(`⚠️ File read failed: ${String(err)}`, false);
+      $("fileStatus").textContent = `✗ Error loading file`;
+      setStatus(`⚠️ File error: ${String(err)}`, false);
+    }
+  });
+
+  $("clearSubtitleBtn").addEventListener("click", async () => {
+    try {
+      setSpinner(true);
+      // Send message to disable subtitles
+      await sendMessage(tabId, {
+        type: "NSPLUS_SET_ENABLED",
+        enabled: false,
+      });
+      // Clear the stored subtitle info
+      await chrome.storage.local.remove([LOADED_SUBTITLE_KEY]);
+      $("fileInput").value = ""; // Clear file input
+      $("fileStatus").textContent = "No file loaded";
+      setStatus("Subtitles cleared.", true);
+      setSpinner(false);
+    } catch (err) {
+      setSpinner(false);
+      setStatus(`⚠️ Error clearing subtitles: ${String(err)}`, false);
     }
   });
 

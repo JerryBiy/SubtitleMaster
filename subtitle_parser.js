@@ -100,11 +100,18 @@ function parseVTT(vttText) {
 
 function parseSubtitles(rawText, fileName = "") {
   const lower = fileName.toLowerCase();
-  if (lower.endsWith(".vtt")) return parseVTT(rawText);
-  if (lower.endsWith(".srt")) return parseSRT(rawText);
 
-  if (rawText.includes("WEBVTT")) return parseVTT(rawText);
-  return parseSRT(rawText);
+  // Handle encoding issues - normalize string
+  let text = String(rawText || "");
+
+  // Remove any null bytes
+  text = text.replace(/\x00/g, "");
+
+  if (lower.endsWith(".vtt")) return parseVTT(text);
+  if (lower.endsWith(".srt")) return parseSRT(text);
+
+  if (text.includes("WEBVTT")) return parseVTT(text);
+  return parseSRT(text);
 }
 
 // Expose globally

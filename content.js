@@ -180,6 +180,7 @@
     if (video !== lastVideo) {
       lastVideo = video;
       STATE.cueIndex = 0;
+      STATE.cues = [];
     }
 
     const t = video.currentTime + STATE.offsetMs / 1000;
@@ -288,13 +289,32 @@
 
         if (msg.type === "NSPLUS_LOAD_SUBTITLES") {
           const { text, fileName, languageLabel } = msg;
-          const cues = window.SubtitleParser.parseSubtitles(text, fileName);
-          STATE.languageLabel = languageLabel || STATE.languageLabel;
-          setCues(cues);
-          enable();
-          await saveSettings({ scope: "title" });
-          sendResponse({ ok: true, cues: cues.length });
-          return;
+          try {
+            if (!text || typeof text !== "string") {
+              throw new Error("Invalid subtitle text: not a string or empty");
+            }
+            const cues = window.SubtitleParser.parseSubtitles(text, fileName);
+            if (!Array.isArray(cues)) {
+              throw new Error("Parser returned invalid cues format");
+            }
+            if (cues.length === 0) {
+              throw new Error(
+                "No subtitles found in file. Check file format and encoding."
+              );
+            }
+            STATE.languageLabel = languageLabel || STATE.languageLabel;
+            setCues(cues);
+            enable();
+            await saveSettings({ scope: "title" });
+            sendResponse({ ok: true, cues: cues.length });
+            return;
+          } catch (parseErr) {
+            sendResponse({
+              ok: false,
+              error: `Failed to parse subtitles: ${String(parseErr)}`,
+            });
+            return;
+          }
         }
 
         if (msg.type === "NSPLUS_UPDATE_SETTINGS") {

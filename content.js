@@ -1,8 +1,9 @@
 // content.js
 (() => {
-  // Prevent double-injection if popup injects while content_scripts already ran
   if (window.__NSPLUS_LOADED__) return;
   window.__NSPLUS_LOADED__ = true;
+
+  const EXT_VERSION = "0.3.0";
 
   const STATE = {
     cues: [],
@@ -122,7 +123,6 @@
   }
 
   function findVideoElement() {
-    // Netflix may have multiple videos; pick visible/large one
     const videos = document.querySelectorAll("video");
     for (const v of videos) {
       const r = v.getBoundingClientRect();
@@ -196,7 +196,6 @@
 
     const cue = cues[idx];
     const active = cue && cue.start <= t && t <= cue.end;
-
     subtitleBox.textContent = active ? cue.text : "";
 
     rafId = requestAnimationFrame(renderLoop);
@@ -236,7 +235,6 @@
     }
   }
 
-  // Netflix SPA navigation hook
   function hookHistory() {
     const push = history.pushState;
     const replace = history.replaceState;
@@ -259,7 +257,6 @@
   }
 
   async function handleNavigation() {
-    // Called whenever Netflix SPA changes routes
     lastVideo = null;
     STATE.cueIndex = 0;
     await loadStoredSettings();
@@ -274,6 +271,8 @@
         if (msg.type === "NSPLUS_PING") {
           sendResponse({
             ok: true,
+            version: EXT_VERSION,
+            page: { href: location.href, titleKey: getTitleKey() },
             enabled: STATE.enabled,
             hasCues: STATE.cues.length > 0,
             state: STATE,
@@ -331,7 +330,6 @@
 
     if (!rafId) rafId = requestAnimationFrame(renderLoop);
 
-    // Also react to DOM changes (Netflix frequently rebuilds player)
     const mo = new MutationObserver(() => {
       const v = findVideoElement();
       if (v && v !== lastVideo) {

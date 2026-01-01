@@ -7,7 +7,36 @@
   </head>
   <body>
     <div class="wrap">
-      <h1>Subtitles+</h1>
+      <div class="topbar">
+        <h1>Subtitles+</h1>
+        <div id="spinner" class="spinner hidden" aria-label="Loading"></div>
+      </div>
+
+      <div id="onboarding" class="card hidden">
+        <div class="cardTitle">Quick start</div>
+        <ul class="bullets">
+          <li>
+            Open a Netflix video page (<span class="mono">/watch/…</span>).
+          </li>
+          <li>
+            Upload an <span class="mono">.srt</span> or
+            <span class="mono">.vtt</span> file.
+          </li>
+          <li>
+            Sync with <span class="mono">[</span> /
+            <span class="mono">]</span> (±250ms),
+            <span class="mono">\</span> resets.
+          </li>
+        </ul>
+        <div class="hint">
+          If you ever see connection issues, try reloading Netflix.
+        </div>
+      </div>
+
+      <div class="row grid2">
+        <button id="reloadNetflixBtn" class="secondary">Reload Netflix</button>
+        <button id="helpBtn" class="secondary">Help</button>
+      </div>
 
       <div class="row">
         <label class="label">Language label</label>
@@ -68,6 +97,7 @@
       </div>
 
       <div id="status" class="status"></div>
+      <div id="smallStatus" class="smallStatus"></div>
     </div>
 
     <script src="popup.js"></script>

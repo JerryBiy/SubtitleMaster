@@ -1,18 +1,48 @@
 // popup.js
 
+const ONBOARDING_KEY = "nsplus_seen_onboarding";
+
 function $(id) {
   return document.getElementById(id);
 }
 
-async function getActiveTab() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  return tab && tab.id ? tab : null;
+function setSpinner(on) {
+  const el = $("spinner");
+  if (!el) return;
+  el.classList.toggle("hidden", !on);
 }
 
 function setStatus(text, ok = true) {
   const el = $("status");
   el.textContent = text;
   el.style.color = ok ? "#d7fbd7" : "#ffd0d0";
+}
+
+function setSmallStatus(text) {
+  const el = $("smallStatus");
+  el.textContent = text || "";
+}
+
+function friendlyErrorMessage(error) {
+  const raw = String(error || "");
+  const msg = raw.toLowerCase();
+
+  if (
+    msg.includes("receiving end does not exist") ||
+    msg.includes("could not establish connection")
+  ) {
+    return (
+      "⚠️ Subtitles+ couldn’t connect to Netflix yet.\n" +
+      "👉 Try reloading the Netflix page, then open this panel again."
+    );
+  }
+
+  return `⚠️ ${raw}`;
+}
+
+async function getActiveTab() {
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tab && tab.id ? tab : null;
 }
 
 function readFileAsText(file) {
@@ -37,37 +67,66 @@ async function sendMessage(tabId, message, { injectOnFail = true } = {}) {
     new Promise((resolve) => {
       chrome.tabs.sendMessage(tabId, message, (resp) => {
         const err = chrome.runtime.lastError;
-        if (err) resolve({ ok: false, error: err.message });
-        else resolve(resp || { ok: false, error: "No response" });
+        if (err) {
+          resolve({ ok: false, error: friendlyErrorMessage(err.message) });
+        } else {
+          resolve(
+            resp || { ok: false, error: "⚠️ No response from content script." }
+          );
+        }
       });
     });
 
   let resp = await attempt();
   if (resp.ok) return resp;
 
-  // If receiver doesn't exist, inject and retry
+  const rawLower = String(resp.error || "").toLowerCase();
   const isNoReceiver =
-    (resp.error || "").includes("Receiving end does not exist") ||
-    (resp.error || "").includes("Could not establish connection");
+    rawLower.includes("receiving end does not exist") ||
+    rawLower.includes("could not establish connection");
 
   if (injectOnFail && isNoReceiver) {
     try {
       await injectIfNeeded(tabId);
       resp = await attempt();
       return resp;
-    } catch (e) {
-      return { ok: false, error: `Inject failed: ${String(e)}` };
+    } catch (_e) {
+      return {
+        ok: false,
+        error:
+          "⚠️ Subtitles+ couldn’t attach to Netflix.\n" +
+          "👉 Try reloading the page and opening this panel again.",
+      };
     }
   }
 
   return resp;
 }
 
+async function showOnboardingIfNeeded() {
+  const stored = await chrome.storage.local.get([ONBOARDING_KEY]);
+  const seen = Boolean(stored[ONBOARDING_KEY]);
+  const card = $("onboarding");
+  if (!card) return;
+
+  if (!seen) {
+    card.classList.remove("hidden");
+    await chrome.storage.local.set({ [ONBOARDING_KEY]: true });
+  }
+}
+
 async function refreshFromContent(tabId) {
+  setSpinner(true);
+  setSmallStatus("Connecting to Netflix…");
+
   const resp = await sendMessage(tabId, { type: "NSPLUS_PING" });
+
+  setSpinner(false);
+
   if (!resp.ok) {
-    setStatus("Open a Netflix tab (netflix.com) and try again.", false);
-    return;
+    setSmallStatus("");
+    setStatus(resp.error, false);
+    return null;
   }
 
   const s = resp.state || {};
@@ -83,38 +142,79 @@ async function refreshFromContent(tabId) {
   $("bgOpacity").value = Number(s.bgOpacity ?? 0.45);
   $("bgVal").textContent = Number($("bgOpacity").value).toFixed(2);
 
-  setStatus(
-    resp.enabled ? "Enabled on this page." : "Disabled on this page.",
-    true
+  const enabledText = resp.enabled ? "Enabled" : "Disabled";
+  const cuesText = resp.hasCues
+    ? "Subtitles loaded"
+    : "No subtitles loaded yet";
+  setStatus(`${enabledText}. ${cuesText}.`, true);
+
+  // Small “debug-ish” line for power users (not scary)
+  const pageHint = resp.page?.href ? resp.page.href : "";
+  setSmallStatus(
+    pageHint.includes("/watch/")
+      ? "Tip: use /watch/ pages for best results."
+      : ""
   );
+
+  return resp;
 }
 
 async function main() {
+  await showOnboardingIfNeeded();
+
   const tab = await getActiveTab();
   if (!tab) {
-    setStatus("No active tab found.", false);
+    setStatus("⚠️ No active tab found.", false);
     return;
   }
 
   const tabId = tab.id;
+  const url = tab.url || "";
 
-  // Ping (auto-inject if needed)
+  // Helpful guidance if user isn't on Netflix
+  if (!url.includes("netflix.com")) {
+    setStatus("Open Netflix in the current tab, then try again.", false);
+    setSmallStatus("");
+  }
+
+  // Initial ping (auto-inject if needed)
   await refreshFromContent(tabId);
 
+  // Buttons: Reload Netflix + Help
+  $("reloadNetflixBtn").addEventListener("click", async () => {
+    try {
+      await chrome.tabs.reload(tabId);
+      setStatus("Reloading Netflix… reopen this panel in a second.", true);
+      setSmallStatus("");
+    } catch (e) {
+      setStatus(`⚠️ Couldn’t reload the tab: ${String(e)}`, false);
+    }
+  });
+
+  $("helpBtn").addEventListener("click", async () => {
+    // Show onboarding card again
+    const card = $("onboarding");
+    if (card) card.classList.toggle("hidden");
+  });
+
   $("enableBtn").addEventListener("click", async () => {
+    setSpinner(true);
     const resp = await sendMessage(tabId, {
       type: "NSPLUS_SET_ENABLED",
       enabled: true,
     });
-    setStatus(resp.ok ? "Enabled." : `Enable failed: ${resp.error}`, resp.ok);
+    setSpinner(false);
+    setStatus(resp.ok ? "Enabled." : resp.error, resp.ok);
   });
 
   $("disableBtn").addEventListener("click", async () => {
+    setSpinner(true);
     const resp = await sendMessage(tabId, {
       type: "NSPLUS_SET_ENABLED",
       enabled: false,
     });
-    setStatus(resp.ok ? "Disabled." : `Disable failed: ${resp.error}`, resp.ok);
+    setSpinner(false);
+    setStatus(resp.ok ? "Disabled." : resp.error, resp.ok);
   });
 
   $("fileInput").addEventListener("change", async (e) => {
@@ -122,9 +222,12 @@ async function main() {
     if (!file) return;
 
     try {
+      setSpinner(true);
+      setSmallStatus("Reading file…");
       const text = await readFileAsText(file);
       const languageLabel = $("languageLabel").value.trim() || "External";
 
+      setSmallStatus("Loading subtitles…");
       const resp = await sendMessage(tabId, {
         type: "NSPLUS_LOAD_SUBTITLES",
         text,
@@ -132,14 +235,19 @@ async function main() {
         languageLabel,
       });
 
+      setSpinner(false);
+      setSmallStatus("");
+
       if (resp.ok) {
         $("fileStatus").textContent = `Loaded ${file.name} (${resp.cues} cues)`;
         setStatus("Subtitles loaded and enabled.", true);
       } else {
-        setStatus(`Load failed: ${resp.error}`, false);
+        setStatus(resp.error, false);
       }
     } catch (err) {
-      setStatus(`File read failed: ${String(err)}`, false);
+      setSpinner(false);
+      setSmallStatus("");
+      setStatus(`⚠️ File read failed: ${String(err)}`, false);
     }
   });
 
@@ -157,18 +265,15 @@ async function main() {
     $("bottomVal").textContent = settings.bottomPx;
     $("bgVal").textContent = settings.bgOpacity.toFixed(2);
 
+    setSpinner(true);
     const resp = await sendMessage(tabId, {
       type: "NSPLUS_UPDATE_SETTINGS",
       settings,
       scope,
     });
+    setSpinner(false);
 
-    setStatus(
-      resp.ok
-        ? `Settings applied (${scope}).`
-        : `Settings failed: ${resp.error}`,
-      resp.ok
-    );
+    setStatus(resp.ok ? `Settings applied (${scope}).` : resp.error, resp.ok);
   };
 
   $("offsetMs").addEventListener("change", applySettings);
@@ -178,7 +283,7 @@ async function main() {
   $("bgOpacity").addEventListener("input", applySettings);
 
   $("scope").addEventListener("change", () => {
-    setStatus("Scope changed. Next adjustment will save to that scope.");
+    setStatus("Scope changed. Next adjustment will save to that scope.", true);
   });
 }
 

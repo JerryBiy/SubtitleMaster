@@ -3,6 +3,9 @@
 const ONBOARDING_KEY = "nsplus_seen_onboarding";
 const LOADED_SUBTITLE_KEY = "nsplus_loaded_subtitle";
 
+// runtime current title key (set after ping)
+let CURRENT_TITLE_KEY = null;
+
 function $(id) {
   return document.getElementById(id);
 }
@@ -132,6 +135,8 @@ async function refreshFromContent(tabId) {
 
   const s = resp.state || {};
   $("offsetMs").value = Number(s.offsetMs ?? 0);
+  const offsetValEl = $("offsetVal");
+  if (offsetValEl) offsetValEl.textContent = Number(s.offsetMs ?? 0);
   $("languageLabel").value = String(s.languageLabel ?? "External");
 
   $("fontSizePx").value = Number(s.fontSizePx ?? 36);
@@ -179,12 +184,15 @@ async function main() {
   }
 
   // Initial ping (auto-inject if needed)
-  await refreshFromContent(tabId);
+  const pingResp = await refreshFromContent(tabId);
+  CURRENT_TITLE_KEY = pingResp?.page?.titleKey || null;
 
-  // Load and display previously loaded subtitle info
+  // Load and display previously loaded subtitle info for this title
   async function restoreLoadedSubtitleDisplay() {
+    if (!CURRENT_TITLE_KEY) return;
     const stored = await chrome.storage.local.get([LOADED_SUBTITLE_KEY]);
-    const loaded = stored[LOADED_SUBTITLE_KEY];
+    const map = stored[LOADED_SUBTITLE_KEY] || {};
+    const loaded = map[CURRENT_TITLE_KEY];
     if (loaded && loaded.fileName) {
       $(
         "fileStatus"
@@ -263,14 +271,25 @@ async function main() {
         const statusText = `✓ Loaded ${file.name} (${resp.cues} cues)`;
         $("fileStatus").textContent = statusText;
         setStatus("Subtitles loaded and enabled.", true);
-        // Save the loaded subtitle info to storage
-        await chrome.storage.local.set({
-          [LOADED_SUBTITLE_KEY]: {
+        // Save the loaded subtitle info to storage (per-title)
+        try {
+          if (!CURRENT_TITLE_KEY) {
+            const ping = await refreshFromContent(tabId);
+            CURRENT_TITLE_KEY = ping?.page?.titleKey || CURRENT_TITLE_KEY;
+          }
+          const stored = await chrome.storage.local.get([LOADED_SUBTITLE_KEY]);
+          const map = stored[LOADED_SUBTITLE_KEY] || {};
+          map[CURRENT_TITLE_KEY] = {
             fileName: file.name,
+            text,
             cues: resp.cues,
+            languageLabel,
             timestamp: Date.now(),
-          },
-        });
+          };
+          await chrome.storage.local.set({ [LOADED_SUBTITLE_KEY]: map });
+        } catch (e) {
+          console.warn("Failed to save loaded subtitle info", e);
+        }
       } else {
         $("fileStatus").textContent = `✗ Failed to load`;
         setStatus(resp.error, false);
@@ -291,8 +310,22 @@ async function main() {
         type: "NSPLUS_SET_ENABLED",
         enabled: false,
       });
-      // Clear the stored subtitle info
-      await chrome.storage.local.remove([LOADED_SUBTITLE_KEY]);
+      // Clear the stored subtitle info for this title only
+      try {
+        const stored = await chrome.storage.local.get([LOADED_SUBTITLE_KEY]);
+        const map = stored[LOADED_SUBTITLE_KEY] || {};
+        if (CURRENT_TITLE_KEY && map[CURRENT_TITLE_KEY]) {
+          delete map[CURRENT_TITLE_KEY];
+          const empty = Object.keys(map).length === 0;
+          if (empty) {
+            await chrome.storage.local.remove([LOADED_SUBTITLE_KEY]);
+          } else {
+            await chrome.storage.local.set({ [LOADED_SUBTITLE_KEY]: map });
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to clear stored subtitle info", e);
+      }
       $("fileInput").value = ""; // Clear file input
       $("fileStatus").textContent = "No file loaded";
       setStatus("Subtitles cleared.", true);
@@ -304,39 +337,98 @@ async function main() {
   });
 
   const applySettings = async () => {
-    const scope = $("scope").value;
+    const offsetMsVal = Number($("offsetMs").value || 0);
     const settings = {
-      offsetMs: Number($("offsetMs").value || 0),
+      offsetMs: offsetMsVal,
       fontSizePx: Number($("fontSizePx").value || 36),
       bottomPx: Number($("bottomPx").value || 90),
       bgOpacity: Number($("bgOpacity").value || 0.45),
       languageLabel: $("languageLabel").value.trim() || "External",
     };
 
-    $("fontSizeVal").textContent = settings.fontSizePx;
-    $("bottomVal").textContent = settings.bottomPx;
-    $("bgVal").textContent = settings.bgOpacity.toFixed(2);
+    console.log(
+      "applySettings called with offsetMs:",
+      offsetMsVal,
+      "settings:",
+      settings
+    );
+
+    // Update display values
+    const offsetValEl = $("offsetVal");
+    if (offsetValEl) offsetValEl.textContent = settings.offsetMs;
+
+    const fontSizeValEl = $("fontSizeVal");
+    if (fontSizeValEl) fontSizeValEl.textContent = settings.fontSizePx;
+
+    const bottomValEl = $("bottomVal");
+    if (bottomValEl) bottomValEl.textContent = settings.bottomPx;
+
+    const bgValEl = $("bgVal");
+    if (bgValEl) bgValEl.textContent = settings.bgOpacity.toFixed(2);
 
     setSpinner(true);
     const resp = await sendMessage(tabId, {
       type: "NSPLUS_UPDATE_SETTINGS",
       settings,
-      scope,
     });
     setSpinner(false);
 
-    setStatus(resp.ok ? `Settings applied (${scope}).` : resp.error, resp.ok);
+    console.log("applySettings response:", resp);
+    setStatus(resp.ok ? `Settings applied.` : resp.error, resp.ok);
   };
 
-  $("offsetMs").addEventListener("change", applySettings);
-  $("languageLabel").addEventListener("change", applySettings);
-  $("fontSizePx").addEventListener("input", applySettings);
-  $("bottomPx").addEventListener("input", applySettings);
-  $("bgOpacity").addEventListener("input", applySettings);
+  const offsetMsEl = $("offsetMs");
+  if (offsetMsEl) {
+    offsetMsEl.addEventListener("input", applySettings);
+  }
 
-  $("scope").addEventListener("change", () => {
-    setStatus("Scope changed. Next adjustment will save to that scope.", true);
-  });
+  const languageLabelEl = $("languageLabel");
+  if (languageLabelEl) {
+    languageLabelEl.addEventListener("change", applySettings);
+  }
+
+  const fontSizePxEl = $("fontSizePx");
+  if (fontSizePxEl) {
+    fontSizePxEl.addEventListener("input", applySettings);
+  }
+
+  const bottomPxEl = $("bottomPx");
+  if (bottomPxEl) {
+    bottomPxEl.addEventListener("input", applySettings);
+  }
+
+  const bgOpacityEl = $("bgOpacity");
+  if (bgOpacityEl) {
+    bgOpacityEl.addEventListener("input", applySettings);
+  }
+
+  const resetOffsetBtn = $("resetOffsetBtn");
+  if (resetOffsetBtn) {
+    resetOffsetBtn.addEventListener("click", async () => {
+      const offsetMsEl = $("offsetMs");
+      if (offsetMsEl) {
+        offsetMsEl.value = 0;
+      }
+      const offsetValEl = $("offsetVal");
+      if (offsetValEl) {
+        offsetValEl.textContent = 0;
+      }
+
+      setSpinner(true);
+      const resp = await sendMessage(tabId, {
+        type: "NSPLUS_UPDATE_SETTINGS",
+        settings: {
+          offsetMs: 0,
+          fontSizePx: Number($("fontSizePx").value || 36),
+          bottomPx: Number($("bottomPx").value || 90),
+          bgOpacity: Number($("bgOpacity").value || 0.45),
+          languageLabel: $("languageLabel").value.trim() || "External",
+        },
+      });
+      setSpinner(false);
+      setStatus(resp.ok ? "Offset reset to 0 ms." : resp.error, resp.ok);
+    });
+  }
 }
 
 main();

@@ -31,7 +31,7 @@
     return m ? `watch:${m[1]}` : `page:${location.pathname}`;
   }
 
-  async function loadStoredSettings() {
+  async function loadStoredSettings(resetOffset = false) {
     const titleKey = getTitleKey();
     const stored = await chrome.storage.local.get([
       STORAGE_KEYS.GLOBAL_SETTINGS,
@@ -42,7 +42,10 @@
     const perTitle = stored[STORAGE_KEYS.PER_TITLE] || {};
     const t = perTitle[titleKey] || {};
 
-    STATE.offsetMs = t.offsetMs ?? global.offsetMs ?? STATE.offsetMs;
+    // offsetMs is not persisted to storage, so it defaults to 0
+    if (resetOffset) {
+      STATE.offsetMs = 0;
+    }
     STATE.fontSizePx = t.fontSizePx ?? global.fontSizePx ?? STATE.fontSizePx;
     STATE.bottomPx = t.bottomPx ?? global.bottomPx ?? STATE.bottomPx;
     STATE.bgOpacity = t.bgOpacity ?? global.bgOpacity ?? STATE.bgOpacity;
@@ -52,7 +55,7 @@
     applyStyles();
   }
 
-  async function saveSettings({ scope = "title" } = {}) {
+  async function saveSettings({ scope = "title", skipOffset = false } = {}) {
     const titleKey = getTitleKey();
     const stored = await chrome.storage.local.get([
       STORAGE_KEYS.GLOBAL_SETTINGS,
@@ -62,8 +65,8 @@
     const global = stored[STORAGE_KEYS.GLOBAL_SETTINGS] || {};
     const perTitle = stored[STORAGE_KEYS.PER_TITLE] || {};
 
+    // Don't include offsetMs in storage unless explicitly needed
     const payload = {
-      offsetMs: STATE.offsetMs,
       fontSizePx: STATE.fontSizePx,
       bottomPx: STATE.bottomPx,
       bgOpacity: STATE.bgOpacity,
@@ -260,7 +263,31 @@
   async function handleNavigation() {
     lastVideo = null;
     STATE.cueIndex = 0;
-    await loadStoredSettings();
+    STATE.offsetMs = 0;
+    await loadStoredSettings(true);
+    // try to load any stored subtitle for the new title
+    try {
+      const stored = await chrome.storage.local.get(["nsplus_loaded_subtitle"]);
+      const map = stored["nsplus_loaded_subtitle"] || {};
+      const entry = map[getTitleKey()];
+      if (entry && entry.text) {
+        const cues = window.SubtitleParser.parseSubtitles(
+          entry.text,
+          entry.fileName || ""
+        );
+        if (Array.isArray(cues) && cues.length) {
+          STATE.languageLabel = entry.languageLabel || STATE.languageLabel;
+          setCues(cues);
+          enable();
+        } else {
+          setCues([]);
+        }
+      } else {
+        setCues([]);
+      }
+    } catch (e) {
+      // ignore storage errors
+    }
     ensureOverlay();
   }
 
@@ -346,6 +373,25 @@
 
     await loadStoredSettings();
     ensureOverlay();
+    // On initial load, try to restore any stored subtitle for this title
+    try {
+      const stored = await chrome.storage.local.get(["nsplus_loaded_subtitle"]);
+      const map = stored["nsplus_loaded_subtitle"] || {};
+      const entry = map[getTitleKey()];
+      if (entry && entry.text) {
+        const cues = window.SubtitleParser.parseSubtitles(
+          entry.text,
+          entry.fileName || ""
+        );
+        if (Array.isArray(cues) && cues.length) {
+          STATE.languageLabel = entry.languageLabel || STATE.languageLabel;
+          setCues(cues);
+          enable();
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
     document.addEventListener("keydown", onKeyDown, true);
 
     if (!rafId) rafId = requestAnimationFrame(renderLoop);

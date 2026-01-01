@@ -74,7 +74,17 @@
       <div class="row">
         <label class="label">Offset (ms)</label>
         <input id="offsetMs" type="number" step="50" />
-        <div class="hint">Hotkeys: [ -250ms, ] +250ms, \ reset</div>
+        <button
+          id="resetOffsetBtn"
+          class="secondary"
+          style="margin-top: 8px; width: 100%"
+        >
+          Reset Offset
+        </button>
+        <div class="hint">
+          Hotkeys: [ -250ms, ] +250ms, \ reset — Current:
+          <span id="offsetVal">0</span> ms
+        </div>
       </div>
 
       <div class="row">
@@ -95,13 +105,7 @@
         <div class="hint"><span id="bgVal"></span></div>
       </div>
 
-      <div class="row">
-        <label class="label">Save scope</label>
-        <select id="scope">
-          <option value="title">This title only</option>
-          <option value="global">All titles (global)</option>
-        </select>
-      </div>
+      <!-- Save scope removed: settings are saved per-title by default -->
 
       <div id="status" class="status"></div>
       <div id="smallStatus" class="smallStatus"></div>

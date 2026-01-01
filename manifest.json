@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Netflix Subtitles+ (Overlay)",
+  "version": "0.1.0",
+  "description": "Overlay external subtitles on Netflix with auto-sync and offset controls.",
+  "permissions": ["storage", "activeTab"],
+  "host_permissions": ["https://www.netflix.com/*"],
+  "action": {
+    "default_title": "Subtitles+",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.netflix.com/*"],
+      "js": ["subtitle_parser.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

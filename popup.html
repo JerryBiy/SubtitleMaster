@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Subtitles+</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Subtitles+</h1>
+
+      <div class="row">
+        <label class="label">Language label</label>
+        <input
+          id="languageLabel"
+          type="text"
+          placeholder="e.g., Chinese (External)"
+        />
+      </div>
+
+      <div class="row">
+        <label class="label">Load subtitles (.srt/.vtt)</label>
+        <input
+          id="fileInput"
+          type="file"
+          accept=".srt,.vtt,text/vtt,text/plain"
+        />
+        <div id="fileStatus" class="hint">No file loaded</div>
+      </div>
+
+      <div class="row grid2">
+        <button id="enableBtn">Enable</button>
+        <button id="disableBtn" class="secondary">Disable</button>
+      </div>
+
+      <hr />
+
+      <div class="row">
+        <label class="label">Offset (ms)</label>
+        <input id="offsetMs" type="number" step="50" />
+        <div class="hint">Hotkeys: [ -250ms, ] +250ms, \ reset</div>
+      </div>
+
+      <div class="row">
+        <label class="label">Font size (px)</label>
+        <input id="fontSizePx" type="range" min="16" max="72" step="1" />
+        <div class="hint"><span id="fontSizeVal"></span> px</div>
+      </div>
+
+      <div class="row">
+        <label class="label">Bottom position (px)</label>
+        <input id="bottomPx" type="range" min="20" max="220" step="1" />
+        <div class="hint"><span id="bottomVal"></span> px</div>
+      </div>
+
+      <div class="row">
+        <label class="label">Background opacity</label>
+        <input id="bgOpacity" type="range" min="0" max="0.85" step="0.05" />
+        <div class="hint"><span id="bgVal"></span></div>
+      </div>
+
+      <div class="row">
+        <label class="label">Save scope</label>
+        <select id="scope">
+          <option value="title">This title only</option>
+          <option value="global">All titles (global)</option>
+        </select>
+      </div>
+
+      <div id="status" class="status"></div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

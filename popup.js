@@ -305,10 +305,9 @@ async function main() {
   $("clearSubtitleBtn").addEventListener("click", async () => {
     try {
       setSpinner(true);
-      // Send message to disable subtitles
+      // Clear the cues from memory
       await sendMessage(tabId, {
-        type: "NSPLUS_SET_ENABLED",
-        enabled: false,
+        type: "NSPLUS_CLEAR_CUES",
       });
       // Clear the stored subtitle info for this title only
       try {

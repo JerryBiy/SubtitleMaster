@@ -360,6 +360,13 @@
           sendResponse({ ok: true });
           return;
         }
+
+        if (msg.type === "NSPLUS_CLEAR_CUES") {
+          setCues([]);
+          disable();
+          sendResponse({ ok: true });
+          return;
+        }
       } catch (err) {
         sendResponse({ ok: false, error: String(err) });
       }

@@ -137,7 +137,6 @@ async function refreshFromContent(tabId) {
   $("offsetMs").value = Number(s.offsetMs ?? 0);
   const offsetValEl = $("offsetVal");
   if (offsetValEl) offsetValEl.textContent = Number(s.offsetMs ?? 0);
-  $("languageLabel").value = String(s.languageLabel ?? "External");
 
   $("fontSizePx").value = Number(s.fontSizePx ?? 36);
   $("fontSizeVal").textContent = $("fontSizePx").value;
@@ -254,14 +253,11 @@ async function main() {
         throw new Error("File is empty");
       }
 
-      const languageLabel = $("languageLabel").value.trim() || "External";
-
       setSmallStatus("Loading subtitles…");
       const resp = await sendMessage(tabId, {
         type: "NSPLUS_LOAD_SUBTITLES",
         text,
         fileName: file.name,
-        languageLabel,
       });
 
       setSpinner(false);
@@ -283,7 +279,6 @@ async function main() {
             fileName: file.name,
             text,
             cues: resp.cues,
-            languageLabel,
             timestamp: Date.now(),
           };
           await chrome.storage.local.set({ [LOADED_SUBTITLE_KEY]: map });
@@ -342,7 +337,6 @@ async function main() {
       fontSizePx: Number($("fontSizePx").value || 36),
       bottomPx: Number($("bottomPx").value || 90),
       bgOpacity: Number($("bgOpacity").value || 0.45),
-      languageLabel: $("languageLabel").value.trim() || "External",
     };
 
     console.log(
@@ -381,10 +375,7 @@ async function main() {
     offsetMsEl.addEventListener("input", applySettings);
   }
 
-  const languageLabelEl = $("languageLabel");
-  if (languageLabelEl) {
-    languageLabelEl.addEventListener("change", applySettings);
-  }
+  // languageLabel UI removed
 
   const fontSizePxEl = $("fontSizePx");
   if (fontSizePxEl) {
@@ -421,7 +412,6 @@ async function main() {
           fontSizePx: Number($("fontSizePx").value || 36),
           bottomPx: Number($("bottomPx").value || 90),
           bgOpacity: Number($("bgOpacity").value || 0.45),
-          languageLabel: $("languageLabel").value.trim() || "External",
         },
       });
       setSpinner(false);

@@ -9,7 +9,6 @@
     cues: [],
     cueIndex: 0,
     enabled: false,
-    languageLabel: "External",
     offsetMs: 0,
     fontSizePx: 36,
     bottomPx: 90,
@@ -49,8 +48,6 @@
     STATE.fontSizePx = t.fontSizePx ?? global.fontSizePx ?? STATE.fontSizePx;
     STATE.bottomPx = t.bottomPx ?? global.bottomPx ?? STATE.bottomPx;
     STATE.bgOpacity = t.bgOpacity ?? global.bgOpacity ?? STATE.bgOpacity;
-    STATE.languageLabel =
-      t.languageLabel ?? global.languageLabel ?? STATE.languageLabel;
 
     applyStyles();
   }
@@ -70,7 +67,6 @@
       fontSizePx: STATE.fontSizePx,
       bottomPx: STATE.bottomPx,
       bgOpacity: STATE.bgOpacity,
-      languageLabel: STATE.languageLabel,
     };
 
     if (scope === "global") {
@@ -276,7 +272,6 @@
           entry.fileName || ""
         );
         if (Array.isArray(cues) && cues.length) {
-          STATE.languageLabel = entry.languageLabel || STATE.languageLabel;
           setCues(cues);
           enable();
         } else {
@@ -315,7 +310,7 @@
         }
 
         if (msg.type === "NSPLUS_LOAD_SUBTITLES") {
-          const { text, fileName, languageLabel } = msg;
+          const { text, fileName } = msg;
           try {
             if (!text || typeof text !== "string") {
               throw new Error("Invalid subtitle text: not a string or empty");
@@ -329,7 +324,6 @@
                 "No subtitles found in file. Check file format and encoding."
               );
             }
-            STATE.languageLabel = languageLabel || STATE.languageLabel;
             setCues(cues);
             enable();
             await saveSettings({ scope: "title" });
@@ -350,8 +344,7 @@
           if (typeof s.fontSizePx === "number") STATE.fontSizePx = s.fontSizePx;
           if (typeof s.bottomPx === "number") STATE.bottomPx = s.bottomPx;
           if (typeof s.bgOpacity === "number") STATE.bgOpacity = s.bgOpacity;
-          if (typeof s.languageLabel === "string")
-            STATE.languageLabel = s.languageLabel;
+          // languageLabel removed
 
           applyStyles();
           await saveSettings({
@@ -391,7 +384,6 @@
           entry.fileName || ""
         );
         if (Array.isArray(cues) && cues.length) {
-          STATE.languageLabel = entry.languageLabel || STATE.languageLabel;
           setCues(cues);
           enable();
         }

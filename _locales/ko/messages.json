@@ -1,0 +1,182 @@
+{
+  "appName": {
+    "message": "Netflix 자막+",
+    "description": "응용 프로그램 이름"
+  },
+  "appDescription": {
+    "message": "Netflix에 외부 자막을 오버레이하고 자동 동기화 및 SPA 탐색 지원을 제공합니다.",
+    "description": "응용 프로그램 설명"
+  },
+  "quickStart": {
+    "message": "빠른 시작",
+    "description": "온보딩 섹션 제목"
+  },
+  "step1": {
+    "message": "Netflix 비디오 페이지를 엽니다.",
+    "description": "첫 번째 온보딩 단계"
+  },
+  "step2": {
+    "message": ".srt 또는 .vtt 파일을 업로드합니다.",
+    "description": "두 번째 온보딩 단계"
+  },
+  "step3": {
+    "message": "[ / ]로 동기화(±250ms), \\는 재설정합니다.",
+    "description": "세 번째 온보딩 단계"
+  },
+  "connectionHint": {
+    "message": "연결 문제가 발생하면 Netflix를 다시 로드해 보세요.",
+    "description": "연결 문제에 대한 도움말"
+  },
+  "reloadNetflix": {
+    "message": "Netflix 다시 로드",
+    "description": "Netflix 페이지를 다시 로드하는 버튼"
+  },
+  "help": {
+    "message": "도움말",
+    "description": "도움말 버튼"
+  },
+  "languageLabel": {
+    "message": "언어 레이블",
+    "description": "언어 선택 레이블"
+  },
+  "loadSubtitles": {
+    "message": "자막 로드(.srt/.vtt)",
+    "description": "파일 업로드 입력 레이블"
+  },
+  "clearSubtitles": {
+    "message": "자막 삭제",
+    "description": "로드된 자막을 삭제하는 버튼"
+  },
+  "noFileLoaded": {
+    "message": "로드된 파일 없음",
+    "description": "자막이 로드되지 않았을 때의 상태 메시지"
+  },
+  "enable": {
+    "message": "활성화",
+    "description": "자막을 활성화하는 버튼"
+  },
+  "disable": {
+    "message": "비활성화",
+    "description": "자막을 비활성화하는 버튼"
+  },
+  "offset": {
+    "message": "오프셋(ms)",
+    "description": "오프셋 조정 레이블"
+  },
+  "resetOffset": {
+    "message": "오프셋 재설정",
+    "description": "오프셋을 재설정하는 버튼"
+  },
+  "offsetHint": {
+    "message": "핫키: [ -250ms, ] +250ms, \\ 재설정 — 현재: ",
+    "description": "오프셋 컨트롤의 힌트 텍스트"
+  },
+  "ms": {
+    "message": "ms",
+    "description": "밀리초 단위"
+  },
+  "fontSize": {
+    "message": "글꼴 크기(px)",
+    "description": "글꼴 크기 슬라이더 레이블"
+  },
+  "px": {
+    "message": "px",
+    "description": "픽셀 단위"
+  },
+  "bottomPosition": {
+    "message": "아래쪽 위치(px)",
+    "description": "아래쪽 위치 슬라이더 레이블"
+  },
+  "bgOpacity": {
+    "message": "배경 불투명도",
+    "description": "배경 불투명도 슬라이더 레이블"
+  },
+  "fontColor": {
+    "message": "글꼴 색",
+    "description": "글꼴 색 선택기 레이블"
+  },
+  "bgColor": {
+    "message": "배경색",
+    "description": "배경색 선택기 레이블"
+  },
+  "resetSettings": {
+    "message": "기본값으로 재설정",
+    "description": "모든 설정을 재설정하는 버튼"
+  },
+  "couldNotConnect": {
+    "message": "⚠️ 자막+이(가) Netflix에 연결할 수 없습니다.",
+    "description": "연결 실패 오류 메시지"
+  },
+  "tryReloading": {
+    "message": "👉 Netflix 페이지를 다시 로드한 후 이 패널을 다시 열어 보세요.",
+    "description": "Netflix를 다시 로드하라는 제안"
+  },
+  "noResponse": {
+    "message": "⚠️ 콘텐츠 스크립트로부터 응답이 없습니다.",
+    "description": "콘텐츠 스크립트가 응답하지 않는 오류"
+  },
+  "injectionFailed": {
+    "message": "⚠️ 이 페이지에 자막 핸들러를 삽입할 수 없습니다.",
+    "description": "주입이 실패한 오류"
+  },
+  "validating": {
+    "message": "검증 중...",
+    "description": "자막을 검증 중일 때 표시되는 메시지"
+  },
+  "fileLoaded": {
+    "message": "파일 로드됨",
+    "description": "파일이 성공적으로 로드되었을 때의 성공 메시지"
+  },
+  "fileNotLoaded": {
+    "message": "⚠️ 파일이 로드되지 않음",
+    "description": "파일 로드 실패 오류"
+  },
+  "noActiveTab": {
+    "message": "⚠️ 활성 탭을 찾을 수 없습니다.",
+    "description": "활성 탭을 찾을 수 없을 때의 오류"
+  },
+  "enabledStatus": {
+    "message": "활성화됨",
+    "description": "자막이 활성화된 경우의 상태"
+  },
+  "disabledStatus": {
+    "message": "비활성화됨",
+    "description": "자막이 비활성화된 경우의 상태"
+  },
+  "readingFile": {
+    "message": "파일 읽는 중…",
+    "description": "파일을 읽는 중일 때의 상태"
+  },
+  "loadingSubtitles": {
+    "message": "자막 로드 중…",
+    "description": "자막을 로드 중일 때의 상태"
+  },
+  "subtitlesLoaded": {
+    "message": "자막이 로드되고 활성화됨",
+    "description": "자막이 성공적으로 로드되었을 때의 성공 메시지"
+  },
+  "failedToLoad": {
+    "message": "✗ 로드 실패",
+    "description": "파일 로드에 실패했을 때의 오류"
+  },
+  "errorLoading": {
+    "message": "✗ 파일 로드 오류",
+    "description": "파일 로드 중 오류 메시지"
+  },
+  "subtitlesCleared": {
+    "message": "자막이 삭제됨",
+    "description": "자막이 성공적으로 삭제되었을 때의 성공 메시지"
+  },
+  "errorClearing": {
+    "message": "자막 삭제 오류",
+    "description": "자막 삭제 실패 시 오류"
+  },
+  "settingsApplied": {
+    "message": "설정 적용됨",
+    "description": "설정이 성공적으로 적용되었을 때의 성공 메시지"
+  },
+  "offsetReset": {
+    "message": "오프셋을 0 ms로 재설정",
+    "description": "오프셋이 성공적으로 재설정되었을 때의 성공 메시지"
+  }
+}

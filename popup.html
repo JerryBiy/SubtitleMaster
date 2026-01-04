@@ -2,49 +2,57 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Subtitles+</title>
+    <title>Netflix Subtitles+</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
     <div class="wrap">
       <div class="topbar">
-        <h1>Subtitles+</h1>
+        <h1 data-i18n="appName">Subtitles+</h1>
         <div id="spinner" class="spinner hidden" aria-label="Loading"></div>
       </div>
 
       <div id="onboarding" class="card hidden">
-        <div class="cardTitle">Quick start</div>
+        <div class="cardTitle" data-i18n="quickStart">Quick start</div>
         <ul class="bullets">
-          <li>
+          <li data-i18n="step1">
             Open a Netflix video page (<span class="mono">/watch/…</span>).
           </li>
-          <li>
+          <li data-i18n="step2">
             Upload an <span class="mono">.srt</span> or
             <span class="mono">.vtt</span> file.
           </li>
-          <li>
+          <li data-i18n="step3">
             Sync with <span class="mono">[</span> /
             <span class="mono">]</span> (±250ms),
             <span class="mono">\</span> resets.
           </li>
         </ul>
-        <div class="hint">
+        <div class="hint" data-i18n="connectionHint">
           If you ever see connection issues, try reloading Netflix.
         </div>
       </div>
 
       <div class="row grid2">
-        <button id="reloadNetflixBtn" class="secondary">Reload Netflix</button>
-        <button id="helpBtn" class="secondary">Help</button>
+        <button
+          id="reloadNetflixBtn"
+          class="secondary"
+          data-i18n="reloadNetflix"
+        >
+          Reload Netflix
+        </button>
+        <button id="helpBtn" class="secondary" data-i18n="help">Help</button>
       </div>
 
       <div class="row">
-        <label class="label">Language label</label>
+        <label class="label" data-i18n="languageLabel">Language label</label>
         <!-- Language label removed -->
       </div>
 
       <div class="row">
-        <label class="label">Load subtitles (.srt/.vtt)</label>
+        <label class="label" data-i18n="loadSubtitles"
+          >Load subtitles (.srt/.vtt)</label
+        >
         <input
           id="fileInput"
           type="file"
@@ -54,49 +62,63 @@
           id="clearSubtitleBtn"
           class="secondary"
           style="margin-top: 8px; width: 100%"
+          data-i18n="clearSubtitles"
         >
           Clear Subtitles
         </button>
-        <div id="fileStatus" class="hint">No file loaded</div>
+        <div id="fileStatus" class="hint" data-i18n="noFileLoaded">
+          No file loaded
+        </div>
       </div>
 
       <div class="row grid2">
-        <button id="enableBtn">Enable</button>
-        <button id="disableBtn" class="secondary">Disable</button>
+        <button id="enableBtn" data-i18n="enable">Enable</button>
+        <button id="disableBtn" class="secondary" data-i18n="disable">
+          Disable
+        </button>
       </div>
 
       <hr />
 
       <div class="row">
-        <label class="label">Offset (ms)</label>
+        <label class="label" data-i18n="offset">Offset (ms)</label>
         <input id="offsetMs" type="number" step="50" />
         <button
           id="resetOffsetBtn"
           class="secondary"
           style="margin-top: 8px; width: 100%"
+          data-i18n="resetOffset"
         >
           Reset Offset
         </button>
         <div class="hint">
-          Hotkeys: [ -250ms, ] +250ms, \ reset — Current:
-          <span id="offsetVal">0</span> ms
+          <span data-i18n="offsetHint"
+            >Hotkeys: [ -250ms, ] +250ms, \ reset — Current:
+          </span>
+          <span id="offsetVal">0</span> <span data-i18n="ms">ms</span>
         </div>
       </div>
 
       <div class="row">
-        <label class="label">Font size (px)</label>
+        <label class="label" data-i18n="fontSize">Font size (px)</label>
         <input id="fontSizePx" type="range" min="16" max="72" step="1" />
-        <div class="hint"><span id="fontSizeVal"></span> px</div>
+        <div class="hint">
+          <span id="fontSizeVal"></span> <span data-i18n="px">px</span>
+        </div>
       </div>
 
       <div class="row">
-        <label class="label">Bottom position (px)</label>
+        <label class="label" data-i18n="bottomPosition"
+          >Bottom position (px)</label
+        >
         <input id="bottomPx" type="range" min="20" max="220" step="1" />
-        <div class="hint"><span id="bottomVal"></span> px</div>
+        <div class="hint">
+          <span id="bottomVal"></span> <span data-i18n="px">px</span>
+        </div>
       </div>
 
       <div class="row">
-        <label class="label">Background opacity</label>
+        <label class="label" data-i18n="bgOpacity">Background opacity</label>
         <input id="bgOpacity" type="range" min="0" max="0.85" step="0.05" />
         <div class="hint"><span id="bgVal"></span></div>
       </div>
@@ -107,6 +129,7 @@
       <div id="smallStatus" class="smallStatus"></div>
     </div>
 
+    <script src="i18n.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

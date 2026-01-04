@@ -1,0 +1,182 @@
+{
+  "appName": {
+    "message": "Netflix Sous-titres+",
+    "description": "Nom de l'application"
+  },
+  "appDescription": {
+    "message": "Superposez les sous-titres externes sur Netflix avec synchronisation automatique et support de navigation SPA.",
+    "description": "Description de l'application"
+  },
+  "quickStart": {
+    "message": "Démarrage rapide",
+    "description": "Titre de la section d'onboarding"
+  },
+  "step1": {
+    "message": "Ouvrez une page vidéo Netflix",
+    "description": "Première étape d'onboarding"
+  },
+  "step2": {
+    "message": "Téléchargez un fichier .srt ou .vtt.",
+    "description": "Deuxième étape d'onboarding"
+  },
+  "step3": {
+    "message": "Synchronisez avec [ / ] (±250ms), \\ réinitialise.",
+    "description": "Troisième étape d'onboarding"
+  },
+  "connectionHint": {
+    "message": "Si vous rencontrez des problèmes de connexion, essayez de recharger Netflix.",
+    "description": "Texte d'aide pour les problèmes de connexion"
+  },
+  "reloadNetflix": {
+    "message": "Recharger Netflix",
+    "description": "Bouton pour recharger la page Netflix"
+  },
+  "help": {
+    "message": "Aide",
+    "description": "Bouton d'aide"
+  },
+  "languageLabel": {
+    "message": "Étiquette de langue",
+    "description": "Étiquette pour la sélection de langue"
+  },
+  "loadSubtitles": {
+    "message": "Charger les sous-titres (.srt/.vtt)",
+    "description": "Étiquette pour l'entrée de téléchargement de fichier"
+  },
+  "clearSubtitles": {
+    "message": "Effacer les sous-titres",
+    "description": "Bouton pour effacer les sous-titres chargés"
+  },
+  "noFileLoaded": {
+    "message": "Aucun fichier chargé",
+    "description": "Message de statut quand aucun sous-titre n'est chargé"
+  },
+  "enable": {
+    "message": "Activer",
+    "description": "Bouton pour activer les sous-titres"
+  },
+  "disable": {
+    "message": "Désactiver",
+    "description": "Bouton pour désactiver les sous-titres"
+  },
+  "offset": {
+    "message": "Décalage (ms)",
+    "description": "Étiquette pour l'ajustement du décalage"
+  },
+  "resetOffset": {
+    "message": "Réinitialiser le décalage",
+    "description": "Bouton pour réinitialiser le décalage"
+  },
+  "offsetHint": {
+    "message": "Raccourcis : [ -250ms, ] +250ms, \\ réinitialise — Actuel : ",
+    "description": "Texte d'aide pour les contrôles de décalage"
+  },
+  "ms": {
+    "message": "ms",
+    "description": "Unité de millisecondes"
+  },
+  "fontSize": {
+    "message": "Taille de la police (px)",
+    "description": "Étiquette du curseur de taille de police"
+  },
+  "px": {
+    "message": "px",
+    "description": "Unité de pixels"
+  },
+  "bottomPosition": {
+    "message": "Position inférieure (px)",
+    "description": "Étiquette du curseur de position inférieure"
+  },
+  "bgOpacity": {
+    "message": "Opacité du fond",
+    "description": "Étiquette du curseur d'opacité du fond"
+  },
+  "fontColor": {
+    "message": "Couleur de la police",
+    "description": "Étiquette du sélecteur de couleur de police"
+  },
+  "bgColor": {
+    "message": "Couleur de fond",
+    "description": "Étiquette du sélecteur de couleur de fond"
+  },
+  "resetSettings": {
+    "message": "Réinitialiser les valeurs par défaut",
+    "description": "Bouton pour réinitialiser tous les paramètres"
+  },
+  "couldNotConnect": {
+    "message": "⚠️ Sous-titres+ n'a pas pu se connecter à Netflix pour l'instant.",
+    "description": "Message d'erreur pour échec de connexion"
+  },
+  "tryReloading": {
+    "message": "👉 Essayez de recharger la page Netflix, puis ouvrez à nouveau ce panneau.",
+    "description": "Suggestion de recharger Netflix"
+  },
+  "noResponse": {
+    "message": "⚠️ Aucune réponse du script de contenu.",
+    "description": "Erreur quand le script de contenu ne répond pas"
+  },
+  "injectionFailed": {
+    "message": "⚠️ Impossible d'injecter le gestionnaire de sous-titres sur cette page.",
+    "description": "Erreur quand l'injection échoue"
+  },
+  "validating": {
+    "message": "Validation en cours...",
+    "description": "Message affiché lors de la validation des sous-titres"
+  },
+  "fileLoaded": {
+    "message": "Fichier chargé",
+    "description": "Message de succès quand un fichier est chargé"
+  },
+  "fileNotLoaded": {
+    "message": "⚠️ Fichier non chargé",
+    "description": "Erreur quand le fichier ne se charge pas"
+  },
+  "noActiveTab": {
+    "message": "⚠️ Aucun onglet actif trouvé.",
+    "description": "Erreur quand aucun onglet actif n'est trouvé"
+  },
+  "enabledStatus": {
+    "message": "Activé",
+    "description": "Statut quand les sous-titres sont activés"
+  },
+  "disabledStatus": {
+    "message": "Désactivé",
+    "description": "Statut quand les sous-titres sont désactivés"
+  },
+  "readingFile": {
+    "message": "Lecture du fichier…",
+    "description": "Statut lors de la lecture du fichier"
+  },
+  "loadingSubtitles": {
+    "message": "Chargement des sous-titres…",
+    "description": "Statut lors du chargement des sous-titres"
+  },
+  "subtitlesLoaded": {
+    "message": "Sous-titres chargés et activés",
+    "description": "Message de succès quand les sous-titres sont chargés"
+  },
+  "failedToLoad": {
+    "message": "✗ Échec du chargement",
+    "description": "Erreur quand le fichier ne se charge pas"
+  },
+  "errorLoading": {
+    "message": "✗ Erreur lors du chargement du fichier",
+    "description": "Message d'erreur pendant le chargement du fichier"
+  },
+  "subtitlesCleared": {
+    "message": "Sous-titres effacés",
+    "description": "Message de succès quand les sous-titres sont effacés"
+  },
+  "errorClearing": {
+    "message": "Erreur lors de l'effacement des sous-titres",
+    "description": "Erreur quand l'effacement des sous-titres échoue"
+  },
+  "settingsApplied": {
+    "message": "Paramètres appliqués",
+    "description": "Message de succès quand les paramètres sont appliqués"
+  },
+  "offsetReset": {
+    "message": "Décalage réinitialisé à 0 ms",
+    "description": "Message de succès quand le décalage est réinitialisé"
+  }
+}

@@ -1,0 +1,182 @@
+{
+  "appName": {
+    "message": "Netflix Subtitles+",
+    "description": "Application name"
+  },
+  "appDescription": {
+    "message": "Overlay external subtitles on Netflix with auto-sync, SPA navigation support, and friendly UX.",
+    "description": "Application description"
+  },
+  "quickStart": {
+    "message": "Quick start",
+    "description": "Onboarding section title"
+  },
+  "step1": {
+    "message": "Open a Netflix video page",
+    "description": "First onboarding step"
+  },
+  "step2": {
+    "message": "Upload an .srt or .vtt file.",
+    "description": "Second onboarding step"
+  },
+  "step3": {
+    "message": "Sync with [ / ] (±250ms), \\ resets.",
+    "description": "Third onboarding step"
+  },
+  "connectionHint": {
+    "message": "If you ever see connection issues, try reloading Netflix.",
+    "description": "Help text for connection issues"
+  },
+  "reloadNetflix": {
+    "message": "Reload Netflix",
+    "description": "Button to reload Netflix page"
+  },
+  "help": {
+    "message": "Help",
+    "description": "Help button"
+  },
+  "languageLabel": {
+    "message": "Language label",
+    "description": "Label for language selection"
+  },
+  "loadSubtitles": {
+    "message": "Load subtitles (.srt/.vtt)",
+    "description": "Label for file upload input"
+  },
+  "clearSubtitles": {
+    "message": "Clear Subtitles",
+    "description": "Button to clear loaded subtitles"
+  },
+  "noFileLoaded": {
+    "message": "No file loaded",
+    "description": "Status message when no subtitles are loaded"
+  },
+  "enable": {
+    "message": "Enable",
+    "description": "Button to enable subtitles"
+  },
+  "disable": {
+    "message": "Disable",
+    "description": "Button to disable subtitles"
+  },
+  "offset": {
+    "message": "Offset (ms)",
+    "description": "Label for offset adjustment"
+  },
+  "resetOffset": {
+    "message": "Reset Offset",
+    "description": "Button to reset offset"
+  },
+  "offsetHint": {
+    "message": "Hotkeys: [ -250ms, ] +250ms, \\ reset — Current: ",
+    "description": "Hint text for offset controls"
+  },
+  "ms": {
+    "message": "ms",
+    "description": "Milliseconds unit"
+  },
+  "fontSize": {
+    "message": "Font size (px)",
+    "description": "Label for font size slider"
+  },
+  "px": {
+    "message": "px",
+    "description": "Pixels unit"
+  },
+  "bottomPosition": {
+    "message": "Bottom position (px)",
+    "description": "Label for bottom position slider"
+  },
+  "bgOpacity": {
+    "message": "Background opacity",
+    "description": "Label for background opacity slider"
+  },
+  "fontColor": {
+    "message": "Font color",
+    "description": "Label for font color picker"
+  },
+  "bgColor": {
+    "message": "Background color",
+    "description": "Label for background color picker"
+  },
+  "resetSettings": {
+    "message": "Reset to Defaults",
+    "description": "Button to reset all settings"
+  },
+  "couldNotConnect": {
+    "message": "⚠️ Subtitles+ couldn't connect to Netflix yet.",
+    "description": "Error message for connection failure"
+  },
+  "tryReloading": {
+    "message": "👉 Try reloading the Netflix page, then open this panel again.",
+    "description": "Suggestion to reload Netflix"
+  },
+  "noResponse": {
+    "message": "⚠️ No response from content script.",
+    "description": "Error when content script doesn't respond"
+  },
+  "injectionFailed": {
+    "message": "⚠️ Failed to inject subtitle handler on this page.",
+    "description": "Error when injection fails"
+  },
+  "validating": {
+    "message": "Validating...",
+    "description": "Message shown while validating subtitles"
+  },
+  "fileLoaded": {
+    "message": "File loaded",
+    "description": "Success message when file is loaded"
+  },
+  "fileNotLoaded": {
+    "message": "⚠️ File not loaded",
+    "description": "Error when file fails to load"
+  },
+  "noActiveTab": {
+    "message": "⚠️ No active tab found.",
+    "description": "Error when no active tab is found"
+  },
+  "enabledStatus": {
+    "message": "Enabled",
+    "description": "Status when subtitles are enabled"
+  },
+  "disabledStatus": {
+    "message": "Disabled",
+    "description": "Status when subtitles are disabled"
+  },
+  "readingFile": {
+    "message": "Reading file…",
+    "description": "Status while reading file"
+  },
+  "loadingSubtitles": {
+    "message": "Loading subtitles…",
+    "description": "Status while loading subtitles"
+  },
+  "subtitlesLoaded": {
+    "message": "Subtitles loaded and enabled",
+    "description": "Success message when subtitles are loaded"
+  },
+  "failedToLoad": {
+    "message": "✗ Failed to load",
+    "description": "Error when file fails to load"
+  },
+  "errorLoading": {
+    "message": "✗ Error loading file",
+    "description": "Error message during file loading"
+  },
+  "subtitlesCleared": {
+    "message": "Subtitles cleared",
+    "description": "Success message when subtitles are cleared"
+  },
+  "errorClearing": {
+    "message": "Error clearing subtitles",
+    "description": "Error when clearing subtitles fails"
+  },
+  "settingsApplied": {
+    "message": "Settings applied",
+    "description": "Success message when settings are applied"
+  },
+  "offsetReset": {
+    "message": "Offset reset to 0 ms",
+    "description": "Success message when offset is reset"
+  }
+}

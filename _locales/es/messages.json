@@ -1,0 +1,182 @@
+{
+  "appName": {
+    "message": "Netflix Subtítulos+",
+    "description": "Nombre de la aplicación"
+  },
+  "appDescription": {
+    "message": "Superponer subtítulos externos en Netflix con sincronización automática y soporte de navegación SPA.",
+    "description": "Descripción de la aplicación"
+  },
+  "quickStart": {
+    "message": "Inicio rápido",
+    "description": "Título de la sección de onboarding"
+  },
+  "step1": {
+    "message": "Abre una página de video de Netflix",
+    "description": "Primer paso de onboarding"
+  },
+  "step2": {
+    "message": "Carga un archivo .srt o .vtt.",
+    "description": "Segundo paso de onboarding"
+  },
+  "step3": {
+    "message": "Sincroniza con [ / ] (±250ms), \\ reinicia.",
+    "description": "Tercer paso de onboarding"
+  },
+  "connectionHint": {
+    "message": "Si alguna vez ves problemas de conexión, intenta recargar Netflix.",
+    "description": "Texto de ayuda para problemas de conexión"
+  },
+  "reloadNetflix": {
+    "message": "Recargar Netflix",
+    "description": "Botón para recargar la página de Netflix"
+  },
+  "help": {
+    "message": "Ayuda",
+    "description": "Botón de ayuda"
+  },
+  "languageLabel": {
+    "message": "Etiqueta de idioma",
+    "description": "Etiqueta para la selección de idioma"
+  },
+  "loadSubtitles": {
+    "message": "Cargar subtítulos (.srt/.vtt)",
+    "description": "Etiqueta para la entrada de carga de archivos"
+  },
+  "clearSubtitles": {
+    "message": "Borrar subtítulos",
+    "description": "Botón para borrar subtítulos cargados"
+  },
+  "noFileLoaded": {
+    "message": "Ningún archivo cargado",
+    "description": "Mensaje de estado cuando no hay subtítulos cargados"
+  },
+  "enable": {
+    "message": "Activar",
+    "description": "Botón para activar subtítulos"
+  },
+  "disable": {
+    "message": "Desactivar",
+    "description": "Botón para desactivar subtítulos"
+  },
+  "offset": {
+    "message": "Desplazamiento (ms)",
+    "description": "Etiqueta para ajuste de desplazamiento"
+  },
+  "resetOffset": {
+    "message": "Reiniciar desplazamiento",
+    "description": "Botón para reiniciar desplazamiento"
+  },
+  "offsetHint": {
+    "message": "Teclas rápidas: [ -250ms, ] +250ms, \\ reinicia — Actual: ",
+    "description": "Texto de sugerencia para controles de desplazamiento"
+  },
+  "ms": {
+    "message": "ms",
+    "description": "Unidad de milisegundos"
+  },
+  "fontSize": {
+    "message": "Tamaño de fuente (px)",
+    "description": "Etiqueta para deslizador de tamaño de fuente"
+  },
+  "px": {
+    "message": "px",
+    "description": "Unidad de píxeles"
+  },
+  "bottomPosition": {
+    "message": "Posición inferior (px)",
+    "description": "Etiqueta para deslizador de posición inferior"
+  },
+  "bgOpacity": {
+    "message": "Opacidad del fondo",
+    "description": "Etiqueta para deslizador de opacidad de fondo"
+  },
+  "fontColor": {
+    "message": "Color de fuente",
+    "description": "Etiqueta para selector de color de fuente"
+  },
+  "bgColor": {
+    "message": "Color de fondo",
+    "description": "Etiqueta para selector de color de fondo"
+  },
+  "resetSettings": {
+    "message": "Restablecer valores predeterminados",
+    "description": "Botón para restablecer todos los ajustes"
+  },
+  "couldNotConnect": {
+    "message": "⚠️ Subtítulos+ no pudo conectarse a Netflix aún.",
+    "description": "Mensaje de error por fallo de conexión"
+  },
+  "tryReloading": {
+    "message": "👉 Intenta recargar la página de Netflix, luego abre este panel nuevamente.",
+    "description": "Sugerencia para recargar Netflix"
+  },
+  "noResponse": {
+    "message": "⚠️ Sin respuesta del script de contenido.",
+    "description": "Error cuando el script de contenido no responde"
+  },
+  "injectionFailed": {
+    "message": "⚠️ No se pudo inyectar el manejador de subtítulos en esta página.",
+    "description": "Error cuando la inyección falla"
+  },
+  "validating": {
+    "message": "Validando...",
+    "description": "Mensaje mostrado mientras se validan los subtítulos"
+  },
+  "fileLoaded": {
+    "message": "Archivo cargado",
+    "description": "Mensaje de éxito cuando se carga un archivo"
+  },
+  "fileNotLoaded": {
+    "message": "⚠️ Archivo no cargado",
+    "description": "Error cuando el archivo no se carga"
+  },
+  "noActiveTab": {
+    "message": "⚠️ No se encontró pestaña activa.",
+    "description": "Error cuando no se encuentra una pestaña activa"
+  },
+  "enabledStatus": {
+    "message": "Activado",
+    "description": "Estado cuando los subtítulos están activados"
+  },
+  "disabledStatus": {
+    "message": "Desactivado",
+    "description": "Estado cuando los subtítulos están desactivados"
+  },
+  "readingFile": {
+    "message": "Leyendo archivo…",
+    "description": "Estado mientras se lee el archivo"
+  },
+  "loadingSubtitles": {
+    "message": "Cargando subtítulos…",
+    "description": "Estado mientras se cargan los subtítulos"
+  },
+  "subtitlesLoaded": {
+    "message": "Subtítulos cargados y activados",
+    "description": "Mensaje de éxito cuando se cargan los subtítulos"
+  },
+  "failedToLoad": {
+    "message": "✗ No se pudo cargar",
+    "description": "Error cuando el archivo no se carga"
+  },
+  "errorLoading": {
+    "message": "✗ Error al cargar el archivo",
+    "description": "Mensaje de error durante la carga del archivo"
+  },
+  "subtitlesCleared": {
+    "message": "Subtítulos borrados",
+    "description": "Mensaje de éxito cuando se borran los subtítulos"
+  },
+  "errorClearing": {
+    "message": "Error al borrar subtítulos",
+    "description": "Error cuando falla la limpieza de subtítulos"
+  },
+  "settingsApplied": {
+    "message": "Configuración aplicada",
+    "description": "Mensaje de éxito cuando se aplican los ajustes"
+  },
+  "offsetReset": {
+    "message": "Desplazamiento reiniciado a 0 ms",
+    "description": "Mensaje de éxito cuando se reinicia el desplazamiento"
+  }
+}

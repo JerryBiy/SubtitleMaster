@@ -313,15 +313,22 @@
           const { text, fileName } = msg;
           try {
             if (!text || typeof text !== "string") {
-              throw new Error("Invalid subtitle text: not a string or empty");
+              throw new Error(
+                chrome.i18n.getMessage("noFileLoaded") ||
+                  "Invalid subtitle text: not a string or empty"
+              );
             }
             const cues = window.SubtitleParser.parseSubtitles(text, fileName);
             if (!Array.isArray(cues)) {
-              throw new Error("Parser returned invalid cues format");
+              throw new Error(
+                chrome.i18n.getMessage("fileNotLoaded") ||
+                  "Parser returned invalid cues format"
+              );
             }
             if (cues.length === 0) {
               throw new Error(
-                "No subtitles found in file. Check file format and encoding."
+                chrome.i18n.getMessage("fileNotLoaded") ||
+                  "No subtitles found in file. Check file format and encoding."
               );
             }
             setCues(cues);

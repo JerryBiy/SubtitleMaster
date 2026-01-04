@@ -1,0 +1,182 @@
+{
+  "appName": {
+    "message": "Netflix 字幕+",
+    "description": "アプリケーション名"
+  },
+  "appDescription": {
+    "message": "Netflixに外部字幕をオーバーレイ表示し、自動同期とSPAナビゲーション対応をサポートします。",
+    "description": "アプリケーション説明"
+  },
+  "quickStart": {
+    "message": "クイックスタート",
+    "description": "オンボーディングセクションのタイトル"
+  },
+  "step1": {
+    "message": "Netflixビデオページを開く",
+    "description": "最初のオンボーディングステップ"
+  },
+  "step2": {
+    "message": ".srtまたは.vttファイルをアップロードします。",
+    "description": "2番目のオンボーディングステップ"
+  },
+  "step3": {
+    "message": "[ / ]で同期(±250ms)、\\でリセット。",
+    "description": "3番目のオンボーディングステップ"
+  },
+  "connectionHint": {
+    "message": "接続の問題が発生した場合は、Netflixをリロードしてみてください。",
+    "description": "接続の問題に関するヘルプテキスト"
+  },
+  "reloadNetflix": {
+    "message": "Netflixをリロード",
+    "description": "Netflixページをリロードするボタン"
+  },
+  "help": {
+    "message": "ヘルプ",
+    "description": "ヘルプボタン"
+  },
+  "languageLabel": {
+    "message": "言語ラベル",
+    "description": "言語選択ラベル"
+  },
+  "loadSubtitles": {
+    "message": "字幕を読み込む(.srt/.vtt)",
+    "description": "ファイルアップロード入力ラベル"
+  },
+  "clearSubtitles": {
+    "message": "字幕をクリア",
+    "description": "読み込まれた字幕をクリアするボタン"
+  },
+  "noFileLoaded": {
+    "message": "ファイルが読み込まれていません",
+    "description": "字幕が読み込まれていない場合のステータスメッセージ"
+  },
+  "enable": {
+    "message": "有効にする",
+    "description": "字幕を有効にするボタン"
+  },
+  "disable": {
+    "message": "無効にする",
+    "description": "字幕を無効にするボタン"
+  },
+  "offset": {
+    "message": "オフセット(ms)",
+    "description": "オフセット調整ラベル"
+  },
+  "resetOffset": {
+    "message": "オフセットをリセット",
+    "description": "オフセットをリセットするボタン"
+  },
+  "offsetHint": {
+    "message": "ホットキー: [ -250ms, ] +250ms, \\ リセット — 現在: ",
+    "description": "オフセット制御のヒントテキスト"
+  },
+  "ms": {
+    "message": "ms",
+    "description": "ミリ秒単位"
+  },
+  "fontSize": {
+    "message": "フォントサイズ(px)",
+    "description": "フォントサイズスライダーラベル"
+  },
+  "px": {
+    "message": "px",
+    "description": "ピクセル単位"
+  },
+  "bottomPosition": {
+    "message": "下部位置(px)",
+    "description": "下部位置スライダーラベル"
+  },
+  "bgOpacity": {
+    "message": "背景の不透明度",
+    "description": "背景不透明度スライダーラベル"
+  },
+  "fontColor": {
+    "message": "フォント色",
+    "description": "フォント色ピッカーラベル"
+  },
+  "bgColor": {
+    "message": "背景色",
+    "description": "背景色ピッカーラベル"
+  },
+  "resetSettings": {
+    "message": "デフォルトにリセット",
+    "description": "すべての設定をリセットするボタン"
+  },
+  "couldNotConnect": {
+    "message": "⚠️ 字幕+はまだNetflixに接続できません。",
+    "description": "接続失敗のエラーメッセージ"
+  },
+  "tryReloading": {
+    "message": "👉 Netflixページをリロードしてから、このパネルを再度開いてみてください。",
+    "description": "Netflixをリロードする提案"
+  },
+  "noResponse": {
+    "message": "⚠️ コンテンツスクリプトからの応答がありません。",
+    "description": "コンテンツスクリプトが応答しないエラー"
+  },
+  "injectionFailed": {
+    "message": "⚠️ このページに字幕ハンドラを注入できませんでした。",
+    "description": "注入が失敗したエラー"
+  },
+  "validating": {
+    "message": "検証中...",
+    "description": "字幕を検証中に表示されるメッセージ"
+  },
+  "fileLoaded": {
+    "message": "ファイルが読み込まれました",
+    "description": "ファイルが正常に読み込まれた場合の成功メッセージ"
+  },
+  "fileNotLoaded": {
+    "message": "⚠️ ファイルが読み込まれていません",
+    "description": "ファイルの読み込みに失敗した場合のエラー"
+  },
+  "noActiveTab": {
+    "message": "⚠️ アクティブなタブが見つかりません。",
+    "description": "アクティブなタブが見つからない場合のエラー"
+  },
+  "enabledStatus": {
+    "message": "有効",
+    "description": "字幕が有効な場合のステータス"
+  },
+  "disabledStatus": {
+    "message": "無効",
+    "description": "字幕が無効な場合のステータス"
+  },
+  "readingFile": {
+    "message": "ファイルを読み込み中…",
+    "description": "ファイルを読み込み中のステータス"
+  },
+  "loadingSubtitles": {
+    "message": "字幕を読み込み中…",
+    "description": "字幕を読み込み中のステータス"
+  },
+  "subtitlesLoaded": {
+    "message": "字幕が読み込まれ、有効になりました",
+    "description": "字幕が正常に読み込まれた場合の成功メッセージ"
+  },
+  "failedToLoad": {
+    "message": "✗ 読み込み失敗",
+    "description": "ファイルの読み込みに失敗した場合のエラー"
+  },
+  "errorLoading": {
+    "message": "✗ ファイル読み込みエラー",
+    "description": "ファイル読み込み中のエラーメッセージ"
+  },
+  "subtitlesCleared": {
+    "message": "字幕をクリアしました",
+    "description": "字幕が正常にクリアされた場合の成功メッセージ"
+  },
+  "errorClearing": {
+    "message": "字幕のクリアエラー",
+    "description": "字幕のクリアに失敗した場合のエラー"
+  },
+  "settingsApplied": {
+    "message": "設定を適用しました",
+    "description": "設定が正常に適用された場合の成功メッセージ"
+  },
+  "offsetReset": {
+    "message": "オフセットを0 msにリセット",
+    "description": "オフセットが正常にリセットされた場合の成功メッセージ"
+  }
+}

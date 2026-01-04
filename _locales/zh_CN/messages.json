@@ -1,0 +1,182 @@
+{
+  "appName": {
+    "message": "Netflix 字幕+",
+    "description": "应用程序名称"
+  },
+  "appDescription": {
+    "message": "在Netflix上覆盖外部字幕，支持自动同步和SPA导航。",
+    "description": "应用程序描述"
+  },
+  "quickStart": {
+    "message": "快速开始",
+    "description": "入门部分标题"
+  },
+  "step1": {
+    "message": "打开Netflix视频页面",
+    "description": "第一个入门步骤"
+  },
+  "step2": {
+    "message": "上传.srt或.vtt文件。",
+    "description": "第二个入门步骤"
+  },
+  "step3": {
+    "message": "使用[ / ]同步(±250ms)，\\重置。",
+    "description": "第三个入门步骤"
+  },
+  "connectionHint": {
+    "message": "如果出现连接问题，请尝试重新加载Netflix。",
+    "description": "连接问题帮助文本"
+  },
+  "reloadNetflix": {
+    "message": "重新加载Netflix",
+    "description": "重新加载Netflix页面的按钮"
+  },
+  "help": {
+    "message": "帮助",
+    "description": "帮助按钮"
+  },
+  "languageLabel": {
+    "message": "语言标签",
+    "description": "语言选择标签"
+  },
+  "loadSubtitles": {
+    "message": "加载字幕(.srt/.vtt)",
+    "description": "文件上传输入标签"
+  },
+  "clearSubtitles": {
+    "message": "清除字幕",
+    "description": "清除已加载字幕的按钮"
+  },
+  "noFileLoaded": {
+    "message": "未加载任何文件",
+    "description": "未加载字幕时的状态消息"
+  },
+  "enable": {
+    "message": "启用",
+    "description": "启用字幕的按钮"
+  },
+  "disable": {
+    "message": "禁用",
+    "description": "禁用字幕的按钮"
+  },
+  "offset": {
+    "message": "偏移(ms)",
+    "description": "偏移调整标签"
+  },
+  "resetOffset": {
+    "message": "重置偏移",
+    "description": "重置偏移的按钮"
+  },
+  "offsetHint": {
+    "message": "热键: [ -250ms, ] +250ms, \\ 重置 — 当前: ",
+    "description": "偏移控制提示文本"
+  },
+  "ms": {
+    "message": "ms",
+    "description": "毫秒单位"
+  },
+  "fontSize": {
+    "message": "字体大小(px)",
+    "description": "字体大小滑块标签"
+  },
+  "px": {
+    "message": "px",
+    "description": "像素单位"
+  },
+  "bottomPosition": {
+    "message": "底部位置(px)",
+    "description": "底部位置滑块标签"
+  },
+  "bgOpacity": {
+    "message": "背景不透明度",
+    "description": "背景不透明度滑块标签"
+  },
+  "fontColor": {
+    "message": "字体颜色",
+    "description": "字体颜色选择器标签"
+  },
+  "bgColor": {
+    "message": "背景颜色",
+    "description": "背景颜色选择器标签"
+  },
+  "resetSettings": {
+    "message": "重置为默认值",
+    "description": "重置所有设置的按钮"
+  },
+  "couldNotConnect": {
+    "message": "⚠️ 字幕+无法连接到Netflix。",
+    "description": "连接失败错误消息"
+  },
+  "tryReloading": {
+    "message": "👉 请尝试重新加载Netflix页面，然后再次打开此面板。",
+    "description": "重新加载Netflix的建议"
+  },
+  "noResponse": {
+    "message": "⚠️ 内容脚本未响应。",
+    "description": "内容脚本不响应时的错误"
+  },
+  "injectionFailed": {
+    "message": "⚠️ 无法在此页面上注入字幕处理程序。",
+    "description": "注入失败时的错误"
+  },
+  "validating": {
+    "message": "验证中...",
+    "description": "验证字幕时显示的消息"
+  },
+  "fileLoaded": {
+    "message": "文件已加载",
+    "description": "文件成功加载时的成功消息"
+  },
+  "fileNotLoaded": {
+    "message": "⚠️ 文件未加载",
+    "description": "文件加载失败时的错误"
+  },
+  "noActiveTab": {
+    "message": "⚠️ 找不到活动标签页。",
+    "description": "找不到活动标签页时的错误"
+  },
+  "enabledStatus": {
+    "message": "已启用",
+    "description": "字幕已启用时的状态"
+  },
+  "disabledStatus": {
+    "message": "已禁用",
+    "description": "字幕已禁用时的状态"
+  },
+  "readingFile": {
+    "message": "正在读取文件…",
+    "description": "正在读取文件时的状态"
+  },
+  "loadingSubtitles": {
+    "message": "正在加载字幕…",
+    "description": "正在加载字幕时的状态"
+  },
+  "subtitlesLoaded": {
+    "message": "字幕已加载且已启用",
+    "description": "字幕成功加载时的成功消息"
+  },
+  "failedToLoad": {
+    "message": "✗ 加载失败",
+    "description": "文件加载失败时的错误"
+  },
+  "errorLoading": {
+    "message": "✗ 文件加载错误",
+    "description": "文件加载期间的错误消息"
+  },
+  "subtitlesCleared": {
+    "message": "字幕已清除",
+    "description": "字幕成功清除时的成功消息"
+  },
+  "errorClearing": {
+    "message": "清除字幕错误",
+    "description": "清除字幕失败时的错误"
+  },
+  "settingsApplied": {
+    "message": "设置已应用",
+    "description": "设置成功应用时的成功消息"
+  },
+  "offsetReset": {
+    "message": "偏移已重置为 0 毫秒",
+    "description": "偏移成功重置时的成功消息"
+  }
+}

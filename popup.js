@@ -27,6 +27,10 @@ function setSmallStatus(text) {
   el.textContent = text || "";
 }
 
+function getMessage(key) {
+  return chrome.i18n.getMessage(key) || "";
+}
+
 function friendlyErrorMessage(error) {
   const raw = String(error || "");
   const msg = raw.toLowerCase();
@@ -35,10 +39,7 @@ function friendlyErrorMessage(error) {
     msg.includes("receiving end does not exist") ||
     msg.includes("could not establish connection")
   ) {
-    return (
-      "⚠️ Subtitles+ couldn’t connect to Netflix yet.\n" +
-      "👉 Try reloading the Netflix page, then open this panel again."
-    );
+    return getMessage("couldNotConnect") + "\n" + getMessage("tryReloading");
   }
 
   return `⚠️ ${raw}`;
@@ -74,9 +75,7 @@ async function sendMessage(tabId, message, { injectOnFail = true } = {}) {
         if (err) {
           resolve({ ok: false, error: friendlyErrorMessage(err.message) });
         } else {
-          resolve(
-            resp || { ok: false, error: "⚠️ No response from content script." }
-          );
+          resolve(resp || { ok: false, error: getMessage("noResponse") });
         }
       });
     });
@@ -98,8 +97,7 @@ async function sendMessage(tabId, message, { injectOnFail = true } = {}) {
       return {
         ok: false,
         error:
-          "⚠️ Subtitles+ couldn’t attach to Netflix.\n" +
-          "👉 Try reloading the page and opening this panel again.",
+          getMessage("couldNotConnect") + "\n" + getMessage("tryReloading"),
       };
     }
   }
@@ -121,7 +119,7 @@ async function showOnboardingIfNeeded() {
 
 async function refreshFromContent(tabId) {
   setSpinner(true);
-  setSmallStatus("Connecting to Netflix…");
+  setSmallStatus(getMessage("validating"));
 
   const resp = await sendMessage(tabId, { type: "NSPLUS_PING" });
 
@@ -147,10 +145,12 @@ async function refreshFromContent(tabId) {
   $("bgOpacity").value = Number(s.bgOpacity ?? 0.45);
   $("bgVal").textContent = Number($("bgOpacity").value).toFixed(2);
 
-  const enabledText = resp.enabled ? "Enabled" : "Disabled";
+  const enabledText = resp.enabled
+    ? getMessage("enable")
+    : getMessage("disable");
   const cuesText = resp.hasCues
-    ? "Subtitles loaded"
-    : "No subtitles loaded yet";
+    ? getMessage("fileLoaded")
+    : getMessage("noFileLoaded");
   setStatus(`${enabledText}. ${cuesText}.`, true);
 
   // Small “debug-ish” line for power users (not scary)
@@ -169,7 +169,7 @@ async function main() {
 
   const tab = await getActiveTab();
   if (!tab) {
-    setStatus("⚠️ No active tab found.", false);
+    setStatus(getMessage("noActiveTab"), false);
     return;
   }
 
@@ -225,7 +225,10 @@ async function main() {
       enabled: true,
     });
     setSpinner(false);
-    setStatus(resp.ok ? "Enabled." : resp.error, resp.ok);
+    setStatus(
+      resp.ok ? getMessage("enabledStatus") + "." : resp.error,
+      resp.ok
+    );
   });
 
   $("disableBtn").addEventListener("click", async () => {
@@ -235,7 +238,10 @@ async function main() {
       enabled: false,
     });
     setSpinner(false);
-    setStatus(resp.ok ? "Disabled." : resp.error, resp.ok);
+    setStatus(
+      resp.ok ? getMessage("disabledStatus") + "." : resp.error,
+      resp.ok
+    );
     // Clear the loaded subtitle display when user disables
     // (but keep it in storage in case they re-enable)
   });
@@ -246,14 +252,14 @@ async function main() {
 
     try {
       setSpinner(true);
-      setSmallStatus("Reading file…");
+      setSmallStatus(getMessage("readingFile"));
       const text = await readFileAsText(file);
 
       if (!text || text.trim().length === 0) {
         throw new Error("File is empty");
       }
 
-      setSmallStatus("Loading subtitles…");
+      setSmallStatus(getMessage("loadingSubtitles"));
       const resp = await sendMessage(tabId, {
         type: "NSPLUS_LOAD_SUBTITLES",
         text,
@@ -266,7 +272,7 @@ async function main() {
       if (resp.ok) {
         const statusText = `✓ Loaded ${file.name} (${resp.cues} cues)`;
         $("fileStatus").textContent = statusText;
-        setStatus("Subtitles loaded and enabled.", true);
+        setStatus(getMessage("subtitlesLoaded") + ".", true);
         // Save the loaded subtitle info to storage (per-title)
         try {
           if (!CURRENT_TITLE_KEY) {
@@ -286,13 +292,13 @@ async function main() {
           console.warn("Failed to save loaded subtitle info", e);
         }
       } else {
-        $("fileStatus").textContent = `✗ Failed to load`;
+        $("fileStatus").textContent = getMessage("failedToLoad");
         setStatus(resp.error, false);
       }
     } catch (err) {
       setSpinner(false);
       setSmallStatus("");
-      $("fileStatus").textContent = `✗ Error loading file`;
+      $("fileStatus").textContent = getMessage("errorLoading");
       setStatus(`⚠️ File error: ${String(err)}`, false);
     }
   });
@@ -321,12 +327,12 @@ async function main() {
         console.warn("Failed to clear stored subtitle info", e);
       }
       $("fileInput").value = ""; // Clear file input
-      $("fileStatus").textContent = "No file loaded";
-      setStatus("Subtitles cleared.", true);
+      $("fileStatus").textContent = getMessage("noFileLoaded");
+      setStatus(getMessage("subtitlesCleared") + ".", true);
       setSpinner(false);
     } catch (err) {
       setSpinner(false);
-      setStatus(`⚠️ Error clearing subtitles: ${String(err)}`, false);
+      setStatus(`⚠️ ${getMessage("errorClearing")}: ${String(err)}`, false);
     }
   });
 
@@ -367,7 +373,10 @@ async function main() {
     setSpinner(false);
 
     console.log("applySettings response:", resp);
-    setStatus(resp.ok ? `Settings applied.` : resp.error, resp.ok);
+    setStatus(
+      resp.ok ? getMessage("settingsApplied") + "." : resp.error,
+      resp.ok
+    );
   };
 
   const offsetMsEl = $("offsetMs");
@@ -415,7 +424,10 @@ async function main() {
         },
       });
       setSpinner(false);
-      setStatus(resp.ok ? "Offset reset to 0 ms." : resp.error, resp.ok);
+      setStatus(
+        resp.ok ? getMessage("offsetReset") + "." : resp.error,
+        resp.ok
+      );
     });
   }
 }

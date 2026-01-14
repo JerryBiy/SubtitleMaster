@@ -88,6 +88,11 @@ button.secondary {
   min-height: 18px;
   opacity: 0.95;
   white-space: pre-line;
+  display: none;
+}
+
+.status:not(:empty) {
+  display: block;
 }
 
 .smallStatus {
@@ -95,6 +100,11 @@ button.secondary {
   font-size: 11px;
   opacity: 0.65;
   min-height: 14px;
+  display: none;
+}
+
+.smallStatus:not(:empty) {
+  display: block;
 }
 
 hr {

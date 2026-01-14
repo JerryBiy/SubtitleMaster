@@ -106,6 +106,7 @@
     subtitleBox.style.textShadow = "0 2px 6px rgba(0,0,0,0.8)";
     subtitleBox.style.borderRadius = "10px";
     subtitleBox.style.padding = "10px 14px";
+    subtitleBox.style.display = "none";
 
     overlayRoot.appendChild(subtitleBox);
     document.documentElement.appendChild(overlayRoot);
@@ -172,6 +173,7 @@
     const video = findVideoElement();
     if (!video) {
       subtitleBox.textContent = "";
+      subtitleBox.style.display = "none";
       rafId = requestAnimationFrame(renderLoop);
       return;
     }
@@ -187,6 +189,7 @@
 
     if (!cues.length) {
       subtitleBox.textContent = "";
+      subtitleBox.style.display = "none";
       rafId = requestAnimationFrame(renderLoop);
       return;
     }
@@ -197,6 +200,7 @@
     const cue = cues[idx];
     const active = cue && cue.start <= t && t <= cue.end;
     subtitleBox.textContent = active ? cue.text : "";
+    subtitleBox.style.display = active && cue.text ? "block" : "none";
 
     rafId = requestAnimationFrame(renderLoop);
   }
@@ -210,7 +214,10 @@
 
   function disable() {
     STATE.enabled = false;
-    if (subtitleBox) subtitleBox.textContent = "";
+    if (subtitleBox) {
+      subtitleBox.textContent = "";
+      subtitleBox.style.display = "none";
+    }
   }
 
   function setCues(cues) {

@@ -158,7 +158,7 @@ async function refreshFromContent(tabId) {
   setSmallStatus(
     pageHint.includes("/watch/")
       ? "Tip: use /watch/ pages for best results."
-      : ""
+      : "",
   );
 
   return resp;
@@ -193,9 +193,8 @@ async function main() {
     const map = stored[LOADED_SUBTITLE_KEY] || {};
     const loaded = map[CURRENT_TITLE_KEY];
     if (loaded && loaded.fileName) {
-      $(
-        "fileStatus"
-      ).textContent = `✓ Loaded ${loaded.fileName} (${loaded.cues} cues)`;
+      $("fileStatus").textContent =
+        `✓ Loaded ${loaded.fileName} (${loaded.cues} cues)`;
     }
   }
 
@@ -227,7 +226,7 @@ async function main() {
     setSpinner(false);
     setStatus(
       resp.ok ? getMessage("enabledStatus") + "." : resp.error,
-      resp.ok
+      resp.ok,
     );
   });
 
@@ -240,7 +239,7 @@ async function main() {
     setSpinner(false);
     setStatus(
       resp.ok ? getMessage("disabledStatus") + "." : resp.error,
-      resp.ok
+      resp.ok,
     );
     // Clear the loaded subtitle display when user disables
     // (but keep it in storage in case they re-enable)
@@ -303,6 +302,85 @@ async function main() {
     }
   });
 
+  const browseOnlineBtn = $("browseOnlineBtn");
+  if (browseOnlineBtn) {
+    browseOnlineBtn.addEventListener("click", async () => {
+      if (!url.includes("netflix.com")) {
+        setStatus(
+          "Open a Netflix /watch/ page first, then try Browse online.",
+          false,
+        );
+        return;
+      }
+      setSpinner(true);
+      const resp = await sendMessage(tabId, {
+        type: "NSPLUS_OPEN_ONLINE_MODAL",
+      });
+      setSpinner(false);
+      if (resp.ok) {
+        setStatus("Opened online subtitle search on the page.", true);
+        window.close();
+      } else {
+        setStatus(resp.error, false);
+      }
+    });
+  }
+
+  // === OpenSubtitles API key management ===
+  async function refreshApiKeyStatus() {
+    try {
+      const r = await chrome.runtime.sendMessage({ type: "NSPLUS_OS_GET_KEY" });
+      const statusEl = $("osApiKeyStatus");
+      if (r && r.ok && r.hasUserKey) {
+        statusEl.innerHTML = `<span style="color:#9fe39f">✓ Using your key (${r.keyPreview})</span>`;
+      } else if (r && r.ok && r.hasDefaultKey) {
+        statusEl.innerHTML =
+          '<span style="color:#9fe39f">✓ Using shared key (built in).</span> ' +
+          '<span style="opacity:0.75">Paste your own from <a href="https://www.opensubtitles.com/en/consumers" target="_blank" style="color:#7eaaff">opensubtitles.com/consumers</a> for personal quota.</span>';
+      } else {
+        statusEl.innerHTML =
+          '<span>No key set. Get a free key at <a href="https://www.opensubtitles.com/en/consumers" target="_blank" style="color:#7eaaff">opensubtitles.com/consumers</a>.</span>';
+      }
+    } catch (_e) {}
+  }
+  refreshApiKeyStatus();
+
+  const osApiKeySave = $("osApiKeySave");
+  if (osApiKeySave) {
+    osApiKeySave.addEventListener("click", async () => {
+      const k = ($("osApiKey").value || "").trim();
+      if (!k) {
+        setStatus("Paste an API key first.", false);
+        return;
+      }
+      const r = await chrome.runtime.sendMessage({
+        type: "NSPLUS_OS_SET_KEY",
+        key: k,
+      });
+      if (r && r.ok) {
+        $("osApiKey").value = "";
+        setStatus("API key saved.", true);
+        refreshApiKeyStatus();
+      } else {
+        setStatus("Failed to save API key.", false);
+      }
+    });
+  }
+  const osApiKeyClear = $("osApiKeyClear");
+  if (osApiKeyClear) {
+    osApiKeyClear.addEventListener("click", async () => {
+      const r = await chrome.runtime.sendMessage({
+        type: "NSPLUS_OS_SET_KEY",
+        key: "",
+      });
+      if (r && r.ok) {
+        $("osApiKey").value = "";
+        setStatus("API key cleared.", true);
+        refreshApiKeyStatus();
+      }
+    });
+  }
+
   $("clearSubtitleBtn").addEventListener("click", async () => {
     try {
       setSpinner(true);
@@ -349,7 +427,7 @@ async function main() {
       "applySettings called with offsetMs:",
       offsetMsVal,
       "settings:",
-      settings
+      settings,
     );
 
     // Update display values
@@ -375,7 +453,7 @@ async function main() {
     console.log("applySettings response:", resp);
     setStatus(
       resp.ok ? getMessage("settingsApplied") + "." : resp.error,
-      resp.ok
+      resp.ok,
     );
   };
 
@@ -426,7 +504,7 @@ async function main() {
       setSpinner(false);
       setStatus(
         resp.ok ? getMessage("offsetReset") + "." : resp.error,
-        resp.ok
+        resp.ok,
       );
     });
   }

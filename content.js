@@ -276,7 +276,7 @@
       if (entry && entry.text) {
         const cues = window.SubtitleParser.parseSubtitles(
           entry.text,
-          entry.fileName || ""
+          entry.fileName || "",
         );
         if (Array.isArray(cues) && cues.length) {
           setCues(cues);
@@ -293,10 +293,522 @@
     ensureOverlay();
   }
 
+  // ===== Online subtitle search (OpenSubtitles via background SW) =====
+
+  function detectTitleInfo() {
+    const info = {
+      title: "",
+      season: null,
+      episode: null,
+      year: null,
+      type: "movie",
+    };
+
+    // Try Netflix player overlay first (most reliable while watching)
+    const videoTitleEl = document.querySelector('[data-uia="video-title"]');
+    if (videoTitleEl) {
+      // Show titles: <h4>Show Name</h4><span>S1:E3 Episode Name</span>
+      const heading = videoTitleEl.querySelector("h4, h1, .title");
+      const spans = videoTitleEl.querySelectorAll("span");
+      if (heading && heading.textContent.trim()) {
+        info.title = heading.textContent.trim();
+      } else {
+        info.title = (videoTitleEl.textContent || "").trim();
+      }
+      // Look for SxEy pattern in any span
+      for (const sp of spans) {
+        const t = sp.textContent || "";
+        const m = t.match(/S(\d+)\s*[:\.\-E]\s*E?(\d+)/i);
+        if (m) {
+          info.season = Number(m[1]);
+          info.episode = Number(m[2]);
+          info.type = "episode";
+          break;
+        }
+      }
+    }
+
+    // Fallback: parse document.title — typically "Show Title | Netflix"
+    if (!info.title) {
+      const docTitle = (document.title || "")
+        .replace(/\s*\|\s*Netflix.*$/i, "")
+        .trim();
+      if (docTitle) info.title = docTitle;
+    }
+
+    // Strip "Watch " prefix Netflix sometimes adds
+    info.title = info.title.replace(/^Watch\s+/i, "").trim();
+
+    // Try to extract year if present in title like "Movie (2019)"
+    const ym = info.title.match(/\((\d{4})\)/);
+    if (ym) {
+      info.year = Number(ym[1]);
+      info.title = info.title.replace(/\s*\(\d{4}\)\s*/, "").trim();
+    }
+
+    if (info.season && info.episode) info.type = "episode";
+    return info;
+  }
+
+  let modalRoot = null;
+
+  function closeOnlineModal() {
+    if (modalRoot && modalRoot.parentNode) {
+      modalRoot.parentNode.removeChild(modalRoot);
+    }
+    modalRoot = null;
+  }
+
+  function buildOnlineModal() {
+    closeOnlineModal();
+
+    modalRoot = document.createElement("div");
+    modalRoot.id = "nsplus-online-modal-root";
+    Object.assign(modalRoot.style, {
+      position: "fixed",
+      inset: "0",
+      zIndex: "2147483647",
+      background: "rgba(0,0,0,0.65)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      color: "#e7e7e7",
+    });
+    modalRoot.addEventListener("click", (e) => {
+      if (e.target === modalRoot) closeOnlineModal();
+    });
+
+    const panel = document.createElement("div");
+    Object.assign(panel.style, {
+      width: "min(720px, 92vw)",
+      maxHeight: "84vh",
+      background: "#161922",
+      borderRadius: "12px",
+      boxShadow: "0 20px 60px rgba(0,0,0,0.6)",
+      display: "flex",
+      flexDirection: "column",
+      overflow: "hidden",
+      border: "1px solid rgba(255,255,255,0.08)",
+    });
+
+    // Header
+    const header = document.createElement("div");
+    Object.assign(header.style, {
+      padding: "14px 16px",
+      borderBottom: "1px solid rgba(255,255,255,0.08)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "10px",
+    });
+    const h = document.createElement("div");
+    h.textContent = "Find subtitles online";
+    h.style.fontSize = "15px";
+    h.style.fontWeight = "700";
+    const closeBtn = document.createElement("button");
+    closeBtn.textContent = "✕";
+    Object.assign(closeBtn.style, {
+      background: "transparent",
+      border: "none",
+      color: "#bbb",
+      fontSize: "18px",
+      cursor: "pointer",
+      padding: "4px 8px",
+    });
+    closeBtn.addEventListener("click", closeOnlineModal);
+    header.appendChild(h);
+    header.appendChild(closeBtn);
+
+    // Detected title row
+    const info = detectTitleInfo();
+    const detected = document.createElement("div");
+    Object.assign(detected.style, {
+      padding: "10px 16px",
+      fontSize: "12px",
+      opacity: "0.85",
+      borderBottom: "1px solid rgba(255,255,255,0.06)",
+    });
+    const titleLine = info.title
+      ? `Detected: <b>${escapeHtml(info.title)}</b>${
+          info.type === "episode" && info.season != null
+            ? ` — S${info.season}E${info.episode}`
+            : ""
+        }${info.year ? ` (${info.year})` : ""}`
+      : "Could not detect title from this Netflix page.";
+    detected.innerHTML = titleLine;
+
+    // Controls row (language + search)
+    const controls = document.createElement("div");
+    Object.assign(controls.style, {
+      padding: "10px 16px",
+      display: "grid",
+      gridTemplateColumns: "1fr 140px 110px",
+      gap: "8px",
+      alignItems: "center",
+      borderBottom: "1px solid rgba(255,255,255,0.06)",
+    });
+    const searchInput = document.createElement("input");
+    searchInput.type = "text";
+    searchInput.placeholder = "Title (auto-filled)";
+    searchInput.value = info.title || "";
+    Object.assign(searchInput.style, inputStyle());
+
+    const langSelect = document.createElement("select");
+    Object.assign(langSelect.style, inputStyle());
+    [
+      ["en", "English"],
+      ["es", "Spanish"],
+      ["fr", "French"],
+      ["de", "German"],
+      ["pt", "Portuguese"],
+      ["it", "Italian"],
+      ["ja", "Japanese"],
+      ["ko", "Korean"],
+      ["zh", "Chinese"],
+      ["ru", "Russian"],
+      ["ar", "Arabic"],
+      ["", "Any"],
+    ].forEach(([v, lbl]) => {
+      const o = document.createElement("option");
+      o.value = v;
+      o.textContent = lbl;
+      langSelect.appendChild(o);
+    });
+    // Default: UI language → en fallback
+    const uiLang = (chrome.i18n.getUILanguage() || "en").slice(0, 2);
+    langSelect.value = [
+      "en",
+      "es",
+      "fr",
+      "de",
+      "pt",
+      "it",
+      "ja",
+      "ko",
+      "zh",
+      "ru",
+      "ar",
+    ].includes(uiLang)
+      ? uiLang
+      : "en";
+
+    const searchBtn = document.createElement("button");
+    searchBtn.textContent = "Search";
+    Object.assign(searchBtn.style, primaryBtnStyle());
+
+    controls.appendChild(searchInput);
+    controls.appendChild(langSelect);
+    controls.appendChild(searchBtn);
+
+    // Results area
+    const list = document.createElement("div");
+    Object.assign(list.style, {
+      flex: "1 1 auto",
+      overflowY: "auto",
+      padding: "8px 8px",
+      minHeight: "180px",
+    });
+
+    // Status / footer
+    const status = document.createElement("div");
+    Object.assign(status.style, {
+      padding: "10px 16px",
+      fontSize: "12px",
+      borderTop: "1px solid rgba(255,255,255,0.08)",
+      minHeight: "18px",
+      opacity: "0.9",
+    });
+
+    panel.appendChild(header);
+    panel.appendChild(detected);
+    panel.appendChild(controls);
+    panel.appendChild(list);
+    panel.appendChild(status);
+    modalRoot.appendChild(panel);
+    document.documentElement.appendChild(modalRoot);
+
+    function setStatus(text, ok = true) {
+      status.textContent = text || "";
+      status.style.color = ok ? "#d7fbd7" : "#ffd0d0";
+    }
+
+    function clearList() {
+      while (list.firstChild) list.removeChild(list.firstChild);
+    }
+
+    function renderEmpty(message) {
+      clearList();
+      const d = document.createElement("div");
+      d.style.padding = "24px";
+      d.style.textAlign = "center";
+      d.style.opacity = "0.7";
+      d.style.fontSize = "13px";
+      d.textContent = message;
+      list.appendChild(d);
+    }
+
+    function renderResults(results) {
+      clearList();
+      if (!results.length) {
+        renderEmpty("No subtitles found. Try adjusting the title or language.");
+        return;
+      }
+      for (const r of results) {
+        const row = document.createElement("div");
+        Object.assign(row.style, {
+          padding: "10px 12px",
+          margin: "4px 6px",
+          background: "rgba(255,255,255,0.04)",
+          borderRadius: "8px",
+          display: "grid",
+          gridTemplateColumns: "1fr auto",
+          gap: "10px",
+          alignItems: "center",
+        });
+
+        const meta = document.createElement("div");
+        meta.style.minWidth = "0";
+        const name = document.createElement("div");
+        name.style.fontSize = "13px";
+        name.style.fontWeight = "600";
+        name.style.overflow = "hidden";
+        name.style.textOverflow = "ellipsis";
+        name.style.whiteSpace = "nowrap";
+        name.textContent = r.file_name || r.release || "(unnamed)";
+        const sub = document.createElement("div");
+        sub.style.fontSize = "11px";
+        sub.style.opacity = "0.75";
+        sub.style.marginTop = "3px";
+        const badges = [];
+        if (r.language) badges.push(r.language.toUpperCase());
+        if (r.from_trusted) badges.push("✓ Trusted");
+        if (r.hd) badges.push("HD");
+        if (r.download_count) badges.push(`↓ ${r.download_count}`);
+        if (r.fps) badges.push(`${r.fps}fps`);
+        if (r.uploader) badges.push(`@${r.uploader}`);
+        sub.textContent = badges.join("  ·  ");
+        meta.appendChild(name);
+        meta.appendChild(sub);
+
+        const useBtn = document.createElement("button");
+        useBtn.textContent = "Use";
+        Object.assign(useBtn.style, primaryBtnStyle());
+        useBtn.addEventListener("click", () => onPickResult(r, useBtn));
+
+        row.appendChild(meta);
+        row.appendChild(useBtn);
+        list.appendChild(row);
+      }
+    }
+
+    async function doSearch() {
+      const query = (searchInput.value || "").trim();
+      if (!query) {
+        setStatus("Enter a title to search.", false);
+        return;
+      }
+      const lang = langSelect.value || "";
+      setStatus("Searching…");
+      renderEmpty("Searching…");
+
+      const params = { query, languages: lang || undefined, type: info.type };
+      if (info.year) params.year = info.year;
+      if (info.type === "episode") {
+        if (info.season != null) params.season_number = info.season;
+        if (info.episode != null) params.episode_number = info.episode;
+      }
+
+      const resp = await chrome.runtime
+        .sendMessage({ type: "NSPLUS_OS_SEARCH", params })
+        .catch((e) => ({ ok: false, error: String(e) }));
+
+      if (!resp || !resp.ok) {
+        if (resp && resp.error === "MISSING_API_KEY") {
+          renderApiKeyPrompt();
+          setStatus("OpenSubtitles API key required.", false);
+        } else {
+          renderEmpty("Search failed.");
+          setStatus(`Error: ${(resp && resp.error) || "unknown"}`, false);
+        }
+        return;
+      }
+      renderResults(resp.results || []);
+      setStatus(`${(resp.results || []).length} result(s).`);
+    }
+
+    async function onPickResult(r, btn) {
+      if (!r.file_id) {
+        setStatus("This result has no downloadable file_id.", false);
+        return;
+      }
+      const original = btn.textContent;
+      btn.textContent = "Downloading…";
+      btn.disabled = true;
+      setStatus("Downloading subtitle…");
+
+      const resp = await chrome.runtime
+        .sendMessage({
+          type: "NSPLUS_OS_DOWNLOAD",
+          params: { file_id: r.file_id },
+        })
+        .catch((e) => ({ ok: false, error: String(e) }));
+
+      btn.textContent = original;
+      btn.disabled = false;
+
+      if (!resp || !resp.ok) {
+        setStatus(
+          `Download failed: ${(resp && resp.error) || "unknown"}`,
+          false,
+        );
+        return;
+      }
+
+      try {
+        const cues = window.SubtitleParser.parseSubtitles(
+          resp.text,
+          resp.fileName || "subtitle.srt",
+        );
+        if (!Array.isArray(cues) || cues.length === 0) {
+          setStatus("Downloaded file had no parseable cues.", false);
+          return;
+        }
+        setCues(cues);
+        enable();
+        await saveSettings({ scope: "title" });
+
+        // Persist for restore on navigation
+        try {
+          const stored = await chrome.storage.local.get([
+            "nsplus_loaded_subtitle",
+          ]);
+          const map = stored["nsplus_loaded_subtitle"] || {};
+          map[getTitleKey()] = {
+            fileName: resp.fileName,
+            text: resp.text,
+            cues: cues.length,
+            timestamp: Date.now(),
+            source: "opensubtitles",
+          };
+          await chrome.storage.local.set({ nsplus_loaded_subtitle: map });
+        } catch (_e) {}
+
+        const remainStr =
+          typeof resp.remaining === "number"
+            ? ` · ${resp.remaining} downloads left today`
+            : "";
+        setStatus(`✓ Loaded ${cues.length} cues${remainStr}.`);
+        setTimeout(closeOnlineModal, 900);
+      } catch (e) {
+        setStatus(`Parse error: ${String(e)}`, false);
+      }
+    }
+
+    function renderApiKeyPrompt() {
+      clearList();
+      const wrap = document.createElement("div");
+      wrap.style.padding = "20px";
+      wrap.style.fontSize = "13px";
+      wrap.style.lineHeight = "1.5";
+      wrap.innerHTML =
+        '<div style="font-weight:700;margin-bottom:8px">OpenSubtitles API key required</div>' +
+        '<div style="opacity:0.85;margin-bottom:10px">Get a free key at ' +
+        '<a href="https://www.opensubtitles.com/en/consumers" target="_blank" style="color:#7eaaff">opensubtitles.com/consumers</a>, ' +
+        "then paste it below or in the extension popup settings.</div>";
+
+      const keyInput = document.createElement("input");
+      keyInput.type = "password";
+      keyInput.placeholder = "Paste API key";
+      Object.assign(keyInput.style, inputStyle(), { marginTop: "6px" });
+
+      const saveBtn = document.createElement("button");
+      saveBtn.textContent = "Save key";
+      Object.assign(saveBtn.style, primaryBtnStyle(), { marginTop: "10px" });
+      saveBtn.addEventListener("click", async () => {
+        const k = (keyInput.value || "").trim();
+        if (!k) return;
+        const r = await chrome.runtime
+          .sendMessage({ type: "NSPLUS_OS_SET_KEY", key: k })
+          .catch((e) => ({ ok: false, error: String(e) }));
+        if (r && r.ok) {
+          setStatus("Key saved. Searching…");
+          doSearch();
+        } else {
+          setStatus("Failed to save key.", false);
+        }
+      });
+
+      wrap.appendChild(keyInput);
+      wrap.appendChild(saveBtn);
+      list.appendChild(wrap);
+    }
+
+    searchBtn.addEventListener("click", doSearch);
+    searchInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") doSearch();
+    });
+
+    // Auto-search if we have a title
+    if (info.title) {
+      doSearch();
+    } else {
+      renderEmpty("Type a title above and click Search.");
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function inputStyle() {
+    return {
+      width: "100%",
+      boxSizing: "border-box",
+      border: "1px solid rgba(255,255,255,0.12)",
+      background: "rgba(255,255,255,0.06)",
+      color: "#fff",
+      borderRadius: "8px",
+      padding: "8px 10px",
+      outline: "none",
+      fontSize: "13px",
+    };
+  }
+
+  function primaryBtnStyle() {
+    return {
+      border: "none",
+      borderRadius: "8px",
+      padding: "8px 14px",
+      cursor: "pointer",
+      background: "#4c7dff",
+      color: "white",
+      fontWeight: "700",
+      fontSize: "13px",
+    };
+  }
+
+  // ===== End online subtitle search =====
+
   chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     (async () => {
       try {
         if (!msg || !msg.type) return;
+
+        if (msg.type === "NSPLUS_OPEN_ONLINE_MODAL") {
+          buildOnlineModal();
+          sendResponse({ ok: true });
+          return;
+        }
+
+        if (msg.type === "NSPLUS_DETECT_TITLE") {
+          sendResponse({ ok: true, info: detectTitleInfo() });
+          return;
+        }
 
         if (msg.type === "NSPLUS_PING") {
           sendResponse({
@@ -322,20 +834,20 @@
             if (!text || typeof text !== "string") {
               throw new Error(
                 chrome.i18n.getMessage("noFileLoaded") ||
-                  "Invalid subtitle text: not a string or empty"
+                  "Invalid subtitle text: not a string or empty",
               );
             }
             const cues = window.SubtitleParser.parseSubtitles(text, fileName);
             if (!Array.isArray(cues)) {
               throw new Error(
                 chrome.i18n.getMessage("fileNotLoaded") ||
-                  "Parser returned invalid cues format"
+                  "Parser returned invalid cues format",
               );
             }
             if (cues.length === 0) {
               throw new Error(
                 chrome.i18n.getMessage("fileNotLoaded") ||
-                  "No subtitles found in file. Check file format and encoding."
+                  "No subtitles found in file. Check file format and encoding.",
               );
             }
             setCues(cues);
@@ -395,7 +907,7 @@
       if (entry && entry.text) {
         const cues = window.SubtitleParser.parseSubtitles(
           entry.text,
-          entry.fileName || ""
+          entry.fileName || "",
         );
         if (Array.isArray(cues) && cues.length) {
           setCues(cues);

@@ -178,5 +178,25 @@
   "offsetReset": {
     "message": "Offset reset to 0 ms",
     "description": "Success message when offset is reset"
+  },
+  "browseOnline": {
+    "message": "🔍 Browse online subtitles",
+    "description": "Button to open online subtitle search modal on Netflix page"
+  },
+  "osApiKeyLabel": {
+    "message": "OpenSubtitles API key (optional override)",
+    "description": "Label for the OpenSubtitles API key input"
+  },
+  "osApiKeyHint": {
+    "message": "A shared key ships with the extension. Paste your own free key from opensubtitles.com/consumers to use your personal quota.",
+    "description": "Hint text below the API key input"
+  },
+  "save": {
+    "message": "Save",
+    "description": "Generic save button"
+  },
+  "clear": {
+    "message": "Clear",
+    "description": "Generic clear button"
   }
 }

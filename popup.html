@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -58,6 +58,13 @@
           type="file"
           accept=".srt,.vtt,text/vtt,text/plain"
         />
+        <button
+          id="browseOnlineBtn"
+          style="margin-top: 8px; width: 100%"
+          data-i18n="browseOnline"
+        >
+          🔍 Browse online subtitles
+        </button>
         <button
           id="clearSubtitleBtn"
           class="secondary"
@@ -124,6 +131,28 @@
       </div>
 
       <!-- Save scope removed: settings are saved per-title by default -->
+
+      <hr />
+      <div class="row">
+        <label class="label" data-i18n="osApiKeyLabel"
+          >OpenSubtitles API key (optional override)</label
+        >
+        <input id="osApiKey" type="password" placeholder="Paste API key" />
+        <div class="grid2" style="margin-top: 6px">
+          <button id="osApiKeySave" class="secondary" data-i18n="save">
+            Save
+          </button>
+          <button id="osApiKeyClear" class="secondary" data-i18n="clear">
+            Clear
+          </button>
+        </div>
+        <div id="osApiKeyStatus" class="hint">
+          <span data-i18n="osApiKeyHint"
+            >A shared key ships with the extension. Paste your own free key from
+            opensubtitles.com/consumers to use your personal quota.</span
+          >
+        </div>
+      </div>
 
       <div id="status" class="status"></div>
       <div id="smallStatus" class="smallStatus"></div>

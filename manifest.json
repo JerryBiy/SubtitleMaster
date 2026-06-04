@@ -2,10 +2,15 @@
   "manifest_version": 3,
   "name": "__MSG_appName__",
   "default_locale": "en",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "__MSG_appDescription__",
   "permissions": ["storage", "activeTab", "scripting", "tabs"],
-  "host_permissions": ["*://*.netflix.com/*"],
+  "host_permissions": [
+    "*://*.netflix.com/*",
+    "https://api.opensubtitles.com/*",
+    "https://*.opensubtitles.com/*",
+    "https://*.opensubtitles.org/*"
+  ],
   "action": {
     "default_title": "Subtitles+",
     "default_popup": "popup.html",
@@ -13,6 +18,9 @@
   },
   "icons": {
     "128": "icons/icon_128.png"
+  },
+  "background": {
+    "service_worker": "background.js"
   },
   "content_scripts": [
     {

@@ -4,7 +4,7 @@
     "description": "Application name"
   },
   "appDescription": {
-    "message": "Overlay external subtitles on Netflix with auto-sync, SPA navigation support, and friendly UX.",
+    "message": "Overlay external subtitles on Netflix and find them online — auto-sync, multi-provider search, and friendly UX.",
     "description": "Application description"
   },
   "quickStart": {

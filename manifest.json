@@ -2,14 +2,21 @@
   "manifest_version": 3,
   "name": "__MSG_appName__",
   "default_locale": "en",
-  "version": "0.4.0",
+  "version": "0.6.0",
   "description": "__MSG_appDescription__",
   "permissions": ["storage", "activeTab", "scripting", "tabs"],
   "host_permissions": [
     "*://*.netflix.com/*",
     "https://api.opensubtitles.com/*",
     "https://*.opensubtitles.com/*",
-    "https://*.opensubtitles.org/*"
+    "https://*.opensubtitles.org/*",
+    "https://api.assrt.net/*",
+    "https://*.assrt.net/*",
+    "https://api.subdl.com/*",
+    "https://dl.subdl.com/*",
+    "https://*.subdl.com/*",
+    "https://*.wikipedia.org/*",
+    "https://www.wikidata.org/*"
   ],
   "action": {
     "default_title": "Subtitles+",

@@ -295,7 +295,35 @@
 
   // ===== Online subtitle search (OpenSubtitles via background SW) =====
 
-  function detectTitleInfo() {
+  // Junk strings that should never be treated as a real show/movie title.
+  const TITLE_BLOCKLIST = new Set([
+    "netflix",
+    "watch",
+    "home",
+    "browse",
+    "loading",
+    "",
+  ]);
+
+  function isJunkTitle(t) {
+    if (!t) return true;
+    const lower = t.trim().toLowerCase();
+    if (TITLE_BLOCKLIST.has(lower)) return true;
+    // "Netflix - Watch TV Shows Online…" style site tagline.
+    if (/^netflix\b.*\b(watch|shows|movies|tv)\b/i.test(t)) return true;
+    return false;
+  }
+
+  function cleanTitle(t) {
+    if (!t) return "";
+    let s = String(t).trim();
+    s = s.replace(/^Watch\s+/i, "");
+    s = s.replace(/\s*[\|\-–—]\s*Netflix.*$/i, "");
+    s = s.replace(/\s*\|\s*Official\s+Netflix\s+Site\s*$/i, "");
+    return s.trim();
+  }
+
+  function detectTitleInfoOnce() {
     const info = {
       title: "",
       season: null,
@@ -304,42 +332,77 @@
       type: "movie",
     };
 
-    // Try Netflix player overlay first (most reliable while watching)
+    // 1) Netflix player overlay (most reliable while watching)
     const videoTitleEl = document.querySelector('[data-uia="video-title"]');
     if (videoTitleEl) {
-      // Show titles: <h4>Show Name</h4><span>S1:E3 Episode Name</span>
       const heading = videoTitleEl.querySelector("h4, h1, .title");
-      const spans = videoTitleEl.querySelectorAll("span");
+      let candidate = "";
       if (heading && heading.textContent.trim()) {
-        info.title = heading.textContent.trim();
+        candidate = heading.textContent.trim();
       } else {
-        info.title = (videoTitleEl.textContent || "").trim();
+        candidate = (videoTitleEl.textContent || "").trim();
       }
-      // Look for SxEy pattern in any span
-      for (const sp of spans) {
-        const t = sp.textContent || "";
-        const m = t.match(/S(\d+)\s*[:\.\-E]\s*E?(\d+)/i);
-        if (m) {
-          info.season = Number(m[1]);
-          info.episode = Number(m[2]);
+      candidate = cleanTitle(candidate);
+      if (!isJunkTitle(candidate)) info.title = candidate;
+
+      // Netflix shows episode info in sibling spans. Formats vary widely:
+      //   "S1:E1", "S01E01", "Season 1: Episode 1", "E1", "Episode 1".
+      const overlayText = videoTitleEl.textContent || "";
+      const sxe = overlayText.match(
+        /S(?:eason)?\s*(\d{1,2})\s*[:\.\-x]?\s*E(?:p|pisode)?\s*(\d{1,3})/i,
+      );
+      if (sxe) {
+        info.season = Number(sxe[1]);
+        info.episode = Number(sxe[2]);
+        info.type = "episode";
+      } else {
+        // Episode-only (Netflix sometimes hides the season): assume S1.
+        const epOnly = overlayText.match(
+          /(?:^|\s)E(?:p|pisode)?\s*[:\.]?\s*(\d{1,3})(?:\s|$|\.)/i,
+        );
+        if (epOnly) {
+          info.season = 1;
+          info.episode = Number(epOnly[1]);
           info.type = "episode";
+        }
+      }
+    }
+
+    // 2) Title card on mini-player / details modal
+    if (!info.title) {
+      const altSel = [
+        '[data-uia="title-card-title"]',
+        '[data-uia="previewModal--title"]',
+        ".title-card-title",
+        ".previewModal--player_title h3",
+        ".previewModal--section-header h2",
+      ];
+      for (const sel of altSel) {
+        const el = document.querySelector(sel);
+        const c = el && cleanTitle(el.textContent || "");
+        if (c && !isJunkTitle(c)) {
+          info.title = c;
           break;
         }
       }
     }
 
-    // Fallback: parse document.title — typically "Show Title | Netflix"
+    // 3) <meta property="og:title">
     if (!info.title) {
-      const docTitle = (document.title || "")
-        .replace(/\s*\|\s*Netflix.*$/i, "")
-        .trim();
-      if (docTitle) info.title = docTitle;
+      const og =
+        document.querySelector('meta[property="og:title"]') ||
+        document.querySelector('meta[name="title"]');
+      const c = og && cleanTitle(og.getAttribute("content") || "");
+      if (c && !isJunkTitle(c)) info.title = c;
     }
 
-    // Strip "Watch " prefix Netflix sometimes adds
-    info.title = info.title.replace(/^Watch\s+/i, "").trim();
+    // 4) document.title (last resort — most likely to be junk on Netflix)
+    if (!info.title) {
+      const c = cleanTitle(document.title || "");
+      if (c && !isJunkTitle(c)) info.title = c;
+    }
 
-    // Try to extract year if present in title like "Movie (2019)"
+    // Year in parens
     const ym = info.title.match(/\((\d{4})\)/);
     if (ym) {
       info.year = Number(ym[1]);
@@ -350,9 +413,36 @@
     return info;
   }
 
+  // Wraps the single-shot detector with a short poll, because the Netflix
+  // player overlay can take 1–2s to render after the page loads.
+  async function detectTitleInfo({ waitMs = 2500 } = {}) {
+    const start = Date.now();
+    let info = detectTitleInfoOnce();
+    while (
+      (!info.title || isJunkTitle(info.title)) &&
+      Date.now() - start < waitMs
+    ) {
+      await new Promise((r) => setTimeout(r, 200));
+      info = detectTitleInfoOnce();
+    }
+    // Final sanity: if still junk, blank it so the UI prompts the user.
+    if (isJunkTitle(info.title)) info.title = "";
+    return info;
+  }
+
   let modalRoot = null;
+  let modalEscHandler = null;
+  let modalSurvivor = null; // MutationObserver that re-attaches modal if Netflix SPA removes it
 
   function closeOnlineModal() {
+    if (modalEscHandler) {
+      document.removeEventListener("keydown", modalEscHandler, true);
+      modalEscHandler = null;
+    }
+    if (modalSurvivor) {
+      modalSurvivor.disconnect();
+      modalSurvivor = null;
+    }
     if (modalRoot && modalRoot.parentNode) {
       modalRoot.parentNode.removeChild(modalRoot);
     }
@@ -375,9 +465,16 @@
       fontFamily: "Arial, Helvetica, sans-serif",
       color: "#e7e7e7",
     });
-    modalRoot.addEventListener("click", (e) => {
-      if (e.target === modalRoot) closeOnlineModal();
-    });
+    // Modal stays open until the user explicitly closes it (✕ Close button
+    // or Escape key). Clicking the backdrop no longer dismisses it.
+    modalEscHandler = (e) => {
+      if (e.key === "Escape" && modalRoot) {
+        e.stopPropagation();
+        e.preventDefault();
+        closeOnlineModal();
+      }
+    };
+    document.addEventListener("keydown", modalEscHandler, true);
 
     const panel = document.createElement("div");
     Object.assign(panel.style, {
@@ -407,21 +504,33 @@
     h.style.fontSize = "15px";
     h.style.fontWeight = "700";
     const closeBtn = document.createElement("button");
-    closeBtn.textContent = "✕";
+    closeBtn.textContent = "✕ Close";
+    closeBtn.title = "Close (Esc)";
     Object.assign(closeBtn.style, {
-      background: "transparent",
-      border: "none",
-      color: "#bbb",
-      fontSize: "18px",
+      background: "rgba(255,255,255,0.10)",
+      border: "1px solid rgba(255,255,255,0.15)",
+      color: "#fff",
+      fontSize: "13px",
+      fontWeight: "600",
       cursor: "pointer",
-      padding: "4px 8px",
+      padding: "6px 12px",
+      borderRadius: "6px",
+    });
+    closeBtn.addEventListener("mouseenter", () => {
+      closeBtn.style.background = "rgba(255,80,80,0.85)";
+    });
+    closeBtn.addEventListener("mouseleave", () => {
+      closeBtn.style.background = "rgba(255,255,255,0.10)";
     });
     closeBtn.addEventListener("click", closeOnlineModal);
     header.appendChild(h);
     header.appendChild(closeBtn);
 
     // Detected title row
-    const info = detectTitleInfo();
+    // Use a fast synchronous attempt first so the modal renders immediately;
+    // then refine asynchronously (the player overlay may not be in the DOM yet).
+    const info = detectTitleInfoOnce();
+    if (isJunkTitle(info.title)) info.title = "";
     const detected = document.createElement("div");
     Object.assign(detected.style, {
       padding: "10px 16px",
@@ -437,6 +546,16 @@
         }${info.year ? ` (${info.year})` : ""}`
       : "Could not detect title from this Netflix page.";
     detected.innerHTML = titleLine;
+
+    // Variant chips — populated by renderVariantChips() after a search.
+    const chips = document.createElement("div");
+    Object.assign(chips.style, {
+      padding: "0 16px 8px",
+      display: "none",
+      flexWrap: "wrap",
+      gap: "6px",
+      fontSize: "11px",
+    });
 
     // Controls row (language + search)
     const controls = document.createElement("div");
@@ -473,6 +592,10 @@
       const o = document.createElement("option");
       o.value = v;
       o.textContent = lbl;
+      // Inherited white-on-transparent from the styled <select> renders
+      // unreadable in the OS dropdown; force dark background + light text.
+      o.style.background = "#161922";
+      o.style.color = "#e7e7e7";
       langSelect.appendChild(o);
     });
     // Default: UI language → en fallback
@@ -522,11 +645,24 @@
 
     panel.appendChild(header);
     panel.appendChild(detected);
+    panel.appendChild(chips);
     panel.appendChild(controls);
     panel.appendChild(list);
     panel.appendChild(status);
     modalRoot.appendChild(panel);
     document.documentElement.appendChild(modalRoot);
+
+    // If Netflix's SPA tries to wipe our modal (e.g. on player teardown),
+    // re-attach it so it survives navigations until the user closes it.
+    modalSurvivor = new MutationObserver(() => {
+      if (modalRoot && !document.documentElement.contains(modalRoot)) {
+        document.documentElement.appendChild(modalRoot);
+      }
+    });
+    modalSurvivor.observe(document.documentElement, {
+      childList: true,
+      subtree: false,
+    });
 
     function setStatus(text, ok = true) {
       status.textContent = text || "";
@@ -548,12 +684,61 @@
       list.appendChild(d);
     }
 
-    function renderResults(results) {
+    function sourceBadge(src) {
+      const label =
+        src === "opensubtitles"
+          ? "OpenSubs"
+          : src === "assrt"
+            ? "Assrt"
+            : src === "subdl"
+              ? "Subdl"
+              : src;
+      const color =
+        src === "opensubtitles"
+          ? "#4c7dff"
+          : src === "assrt"
+            ? "#e6651a"
+            : src === "subdl"
+              ? "#1aa66e"
+              : "#666";
+      const span = document.createElement("span");
+      span.textContent = label;
+      Object.assign(span.style, {
+        background: color,
+        color: "white",
+        fontSize: "10px",
+        fontWeight: "700",
+        padding: "2px 6px",
+        borderRadius: "4px",
+        marginRight: "6px",
+        verticalAlign: "middle",
+      });
+      return span;
+    }
+
+    function renderResults(results, counts) {
       clearList();
       if (!results.length) {
         renderEmpty("No subtitles found. Try adjusting the title or language.");
         return;
       }
+      // Optional: small header row with per-source counts
+      if (counts) {
+        const summary = document.createElement("div");
+        Object.assign(summary.style, {
+          padding: "6px 12px",
+          fontSize: "11px",
+          opacity: "0.7",
+        });
+        const parts = [];
+        if (counts.opensubtitles != null)
+          parts.push(`OpenSubs: ${counts.opensubtitles}`);
+        if (counts.assrt != null) parts.push(`Assrt: ${counts.assrt}`);
+        if (counts.subdl != null) parts.push(`Subdl: ${counts.subdl}`);
+        summary.textContent = parts.join("  ·  ");
+        list.appendChild(summary);
+      }
+
       for (const r of results) {
         const row = document.createElement("div");
         Object.assign(row.style, {
@@ -575,18 +760,24 @@
         name.style.overflow = "hidden";
         name.style.textOverflow = "ellipsis";
         name.style.whiteSpace = "nowrap";
-        name.textContent = r.file_name || r.release || "(unnamed)";
+        name.appendChild(sourceBadge(r.source));
+        const nameText = document.createElement("span");
+        nameText.textContent = r.file_name || r.release || "(unnamed)";
+        name.appendChild(nameText);
+
         const sub = document.createElement("div");
         sub.style.fontSize = "11px";
         sub.style.opacity = "0.75";
         sub.style.marginTop = "3px";
         const badges = [];
-        if (r.language) badges.push(r.language.toUpperCase());
+        if (r.language_desc) badges.push(r.language_desc);
+        else if (r.language) badges.push(r.language.toUpperCase());
         if (r.from_trusted) badges.push("✓ Trusted");
         if (r.hd) badges.push("HD");
         if (r.download_count) badges.push(`↓ ${r.download_count}`);
         if (r.fps) badges.push(`${r.fps}fps`);
         if (r.uploader) badges.push(`@${r.uploader}`);
+        if (r._matched_variant) badges.push(`“${r._matched_variant}”`);
         sub.textContent = badges.join("  ·  ");
         meta.appendChild(name);
         meta.appendChild(sub);
@@ -602,44 +793,303 @@
       }
     }
 
-    async function doSearch() {
+    function scriptOf(s) {
+      if (!s) return "latin";
+      if (/[\u4e00-\u9fff\u3400-\u4dbf]/.test(s)) return "cjk-han";
+      if (/[\u3040-\u30ff]/.test(s)) return "ja";
+      if (/[\uac00-\ud7af]/.test(s)) return "ko";
+      if (/[\u0400-\u04ff]/.test(s)) return "cyrillic";
+      if (/[\u0600-\u06ff]/.test(s)) return "arabic";
+      return "latin";
+    }
+
+    // Build a set of search tokens from the variants so we can filter out
+    // unrelated provider results. OpenSubtitles in particular falls back to
+    // popularity-ranked junk when given a query in a non-Latin script.
+    function buildVariantTokens(variants) {
+      const tokens = new Set();
+      const phrases = [];
+      const stop = new Set([
+        "the",
+        "a",
+        "an",
+        "of",
+        "and",
+        "or",
+        "to",
+        "in",
+        "on",
+        "for",
+        "with",
+        "is",
+        "movie",
+        "film",
+        "series",
+        "season",
+        "tv",
+        "part",
+        "vol",
+        "volume",
+      ]);
+      for (const v of variants || []) {
+        const s = (v || "").trim();
+        if (!s) continue;
+        phrases.push(s.toLowerCase());
+        // Split into word-like tokens (works for Latin/Cyrillic/etc.)
+        for (const tok of s.toLowerCase().split(/[^\p{L}\p{N}]+/u)) {
+          // Require >= 4 chars so articles (los, las, el, der, …) don't
+          // match every unrelated release.
+          if (tok.length >= 4 && !stop.has(tok)) tokens.add(tok);
+        }
+        // CJK substring tokens (3-grams) for Chinese/Japanese/Korean.
+        if (/[\u4e00-\u9fff\u3040-\u30ff\uac00-\ud7af]/.test(s)) {
+          const clean = s.replace(/\s+/g, "");
+          if (clean.length >= 2) tokens.add(clean);
+        }
+      }
+      return { tokens: Array.from(tokens), phrases };
+    }
+
+    function filterByRelevance(results, variants) {
+      const { tokens, phrases } = buildVariantTokens(variants);
+      if (!tokens.length && !phrases.length) return results;
+      return results.filter((r) => {
+        // IMPORTANT: do NOT include _matched_variant here — that's the
+        // query we *sent* to the provider, not what the file actually
+        // contains. Including it would let every result trivially pass.
+        const hay = (
+          (r.file_name || "") +
+          " " +
+          (r.release || "")
+        ).toLowerCase();
+        if (!hay.trim()) return false;
+        for (const p of phrases) if (p && hay.includes(p)) return true;
+        for (const t of tokens) if (hay.includes(t)) return true;
+        return false;
+      });
+    }
+
+    // Detect the language Netflix's UI (and thus the detected title) is in.
+    // Used only to recognize which variant is the "native" one; the search
+    // itself always prefers the English title because OpenSubtitles indexes
+    // English titles far more reliably.
+    function detectNetflixLang() {
+      const htmlLang = (document.documentElement.lang || "").toLowerCase();
+      if (htmlLang) return htmlLang.split("-")[0];
+      const nav = (navigator.language || "").toLowerCase();
+      return nav ? nav.split("-")[0] : "";
+    }
+
+    function prioritizeVariants(variants, original, lang) {
+      const seen = new Set();
+      const unique = [];
+      for (const v of [original, ...variants]) {
+        const k = (v || "").trim().toLowerCase();
+        if (!k || seen.has(k)) continue;
+        seen.add(k);
+        unique.push(v.trim());
+      }
+      const nfLang = detectNetflixLang();
+      const langScript =
+        {
+          zh: "cjk-han",
+          ja: "ja",
+          ko: "ko",
+          ru: "cyrillic",
+          ar: "arabic",
+        }[lang || nfLang] || "latin";
+
+      // Score: lower = better.
+      // 1. The English / Latin-script title wins outright — OpenSubtitles has
+      //    by far the best coverage for English titles, so it should be the
+      //    primary query (variants[0]).
+      // 2. The user's typed/detected title comes next (respect their intent).
+      // 3. A variant matching the selected (or Netflix UI) language follows.
+      const scored = unique.map((v, i) => {
+        let score = 0;
+        const sc = scriptOf(v);
+        if (sc === "latin") score -= 100; // English title — top priority
+        if (i === 0) score -= 40; // the title the user is looking at
+        if (sc === langScript && langScript !== "latin") score -= 30;
+        return { v, score };
+      });
+      scored.sort((a, b) => a.score - b.score);
+      return scored.map((s) => s.v);
+    }
+
+    function renderVariantChips(variants, original) {
+      chips.innerHTML = "";
+      if (!variants || variants.length <= 1) {
+        chips.style.display = "none";
+        return;
+      }
+      chips.style.display = "flex";
+      const label = document.createElement("span");
+      label.textContent = "Tried:";
+      label.style.opacity = "0.6";
+      label.style.alignSelf = "center";
+      chips.appendChild(label);
+      variants.forEach((v) => {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.textContent = v;
+        chip.title = `Search only “${v}”`;
+        Object.assign(chip.style, {
+          background: "rgba(255,255,255,0.08)",
+          border: "1px solid rgba(255,255,255,0.15)",
+          color: "#e7e7e7",
+          borderRadius: "999px",
+          padding: "2px 10px",
+          fontSize: "11px",
+          cursor: "pointer",
+        });
+        chip.addEventListener("click", () => {
+          searchInput.value = v;
+          doSearch({ singleVariant: true });
+        });
+        chips.appendChild(chip);
+      });
+    }
+
+    async function doSearch(opts = {}) {
       const query = (searchInput.value || "").trim();
       if (!query) {
         setStatus("Enter a title to search.", false);
         return;
       }
       const lang = langSelect.value || "";
-      setStatus("Searching…");
+      const forceSingle = !!opts.singleVariant; // when user clicks a chip
+
+      // Step 1: get variants unless caller asked for a single-variant search.
+      let variants = [query];
+      if (!forceSingle) {
+        setStatus("Looking up title variants…");
+        renderEmpty("Looking up title variants…");
+        try {
+          const vr = await chrome.runtime.sendMessage({
+            type: "NSPLUS_GET_VARIANTS",
+            params: { query, year: info.year, type: info.type },
+          });
+          if (vr && vr.ok && Array.isArray(vr.variants) && vr.variants.length) {
+            variants = vr.variants;
+          }
+        } catch (_e) {}
+
+        // Reorder: the user's typed query first, then any variant in a
+        // matching script (Latin / CJK / Cyrillic / Arabic), then the rest.
+        // Limit to 4 to avoid diluting OpenSubtitles relevance ranking.
+        variants = prioritizeVariants(variants, query, lang).slice(0, 4);
+      }
+
+      // Surface the variants as clickable chips so the user can re-run
+      // search with just one if auto-merge gives noisy results.
+      renderVariantChips(variants, query);
+
+      setStatus(
+        variants.length > 1
+          ? `Searching ${variants.length} title variants…`
+          : `Searching “${variants[0]}”…`,
+      );
       renderEmpty("Searching…");
 
-      const params = { query, languages: lang || undefined, type: info.type };
-      if (info.year) params.year = info.year;
+      const baseParams = { type: info.type };
+      if (info.year) baseParams.year = info.year;
       if (info.type === "episode") {
-        if (info.season != null) params.season_number = info.season;
-        if (info.episode != null) params.episode_number = info.episode;
+        if (info.season != null) baseParams.season_number = info.season;
+        if (info.episode != null) baseParams.episode_number = info.episode;
       }
 
-      const resp = await chrome.runtime
-        .sendMessage({ type: "NSPLUS_OS_SEARCH", params })
-        .catch((e) => ({ ok: false, error: String(e) }));
+      const sendSearch = (langs) =>
+        chrome.runtime
+          .sendMessage({
+            type: "NSPLUS_SEARCH_ALL",
+            params: {
+              ...baseParams,
+              variants,
+              query: variants[0],
+              languages: langs || undefined,
+            },
+          })
+          .catch((e) => ({ ok: false, error: String(e) }));
+
+      let resp = await sendSearch(lang || undefined);
+      let triedAnyLang = false;
 
       if (!resp || !resp.ok) {
-        if (resp && resp.error === "MISSING_API_KEY") {
-          renderApiKeyPrompt();
-          setStatus("OpenSubtitles API key required.", false);
-        } else {
-          renderEmpty("Search failed.");
-          setStatus(`Error: ${(resp && resp.error) || "unknown"}`, false);
-        }
+        renderEmpty("Search failed.");
+        setStatus(`Error: ${(resp && resp.error) || "unknown"}`, false);
         return;
       }
-      renderResults(resp.results || []);
-      setStatus(`${(resp.results || []).length} result(s).`);
+
+      let results = resp.results || [];
+
+      // Client-side language filter — providers don't all honor it strictly.
+      const filterByLang = (rs) => {
+        if (!lang) return rs;
+        const want = lang.toLowerCase();
+        const wantFamily = want.split("-")[0];
+        return rs.filter((r) => {
+          const l = (r.language || "").toLowerCase();
+          return (
+            l === want || l === wantFamily || l.startsWith(wantFamily + "-")
+          );
+        });
+      };
+
+      let filtered = filterByLang(results);
+
+      // Auto-fallback: if nothing matched the requested language, retry without
+      // a language filter so the user at least sees alternatives.
+      if (lang && filtered.length === 0 && results.length === 0) {
+        triedAnyLang = true;
+        setStatus(
+          `No results in ${lang.toUpperCase()}. Retrying with any language…`,
+        );
+        resp = await sendSearch(undefined);
+        if (resp && resp.ok) {
+          results = resp.results || [];
+          filtered = results;
+        }
+      }
+
+      const finalResults = filtered.length ? filtered : results;
+      const relevant = filterByRelevance(finalResults, variants);
+      const displayResults = relevant.length ? relevant : finalResults;
+      const droppedCount = finalResults.length - relevant.length;
+      renderResults(displayResults, resp.counts);
+
+      const errParts = Object.entries(resp.errors || {})
+        .filter(([, v]) => v)
+        .map(([k, v]) => `${k}: ${String(v).slice(0, 40)}`);
+      const variantNote =
+        variants.length > 1
+          ? ` · Tried titles: ${variants.slice(0, 5).join(" / ")}${variants.length > 5 ? "…" : ""}`
+          : "";
+      const fallbackNote = triedAnyLang ? " · Showing all languages." : "";
+
+      if (finalResults.length) {
+        const dropNote =
+          droppedCount > 0 ? ` · Hid ${droppedCount} unrelated.` : "";
+        setStatus(
+          `${displayResults.length} result(s).${variantNote}${fallbackNote}${dropNote}${
+            errParts.length
+              ? "  (Some providers failed: " + errParts.join("; ") + ")"
+              : ""
+          }`,
+        );
+      } else {
+        setStatus(
+          (errParts.length
+            ? `No results. ${errParts.join("; ")}`
+            : "No results.") + variantNote,
+          false,
+        );
+      }
     }
 
     async function onPickResult(r, btn) {
-      if (!r.file_id) {
-        setStatus("This result has no downloadable file_id.", false);
+      if (!r.payload) {
+        setStatus("This result has no download payload.", false);
         return;
       }
       const original = btn.textContent;
@@ -649,8 +1099,8 @@
 
       const resp = await chrome.runtime
         .sendMessage({
-          type: "NSPLUS_OS_DOWNLOAD",
-          params: { file_id: r.file_id },
+          type: "NSPLUS_DOWNLOAD",
+          params: { source: r.source, payload: r.payload },
         })
         .catch((e) => ({ ok: false, error: String(e) }));
 
@@ -689,17 +1139,19 @@
             text: resp.text,
             cues: cues.length,
             timestamp: Date.now(),
-            source: "opensubtitles",
+            source: r.source,
           };
           await chrome.storage.local.set({ nsplus_loaded_subtitle: map });
         } catch (_e) {}
 
         const remainStr =
           typeof resp.remaining === "number"
-            ? ` · ${resp.remaining} downloads left today`
+            ? ` · ${resp.remaining} OS downloads left today`
             : "";
-        setStatus(`✓ Loaded ${cues.length} cues${remainStr}.`);
-        setTimeout(closeOnlineModal, 900);
+        setStatus(
+          `✓ Loaded ${cues.length} cues${remainStr}. You can pick another or close this dialog.`,
+        );
+        // Modal stays open; user closes it explicitly via the Close button or Esc.
       } catch (e) {
         setStatus(`Parse error: ${String(e)}`, false);
       }
@@ -749,11 +1201,35 @@
       if (e.key === "Enter") doSearch();
     });
 
-    // Auto-search if we have a title
+    // Auto-search if we have a title; otherwise wait briefly for Netflix's
+    // player overlay to render and re-detect.
     if (info.title) {
       doSearch();
     } else {
-      renderEmpty("Type a title above and click Search.");
+      renderEmpty("Detecting title…");
+      detectTitleInfo({ waitMs: 3000 }).then((better) => {
+        if (!modalRoot) return; // user closed modal already
+        if (better.title) {
+          info.title = better.title;
+          info.season = better.season;
+          info.episode = better.episode;
+          info.year = better.year;
+          info.type = better.type;
+          searchInput.value = better.title;
+          detected.innerHTML = `Detected: <b>${escapeHtml(better.title)}</b>${
+            better.type === "episode" && better.season != null
+              ? ` — S${better.season}E${better.episode}`
+              : ""
+          }${better.year ? ` (${better.year})` : ""}`;
+          doSearch();
+        } else {
+          renderEmpty(
+            "Couldn't detect a title. Type one above and click Search.",
+          );
+          detected.innerHTML =
+            "Could not detect a title from this Netflix page. Type one below.";
+        }
+      });
     }
   }
 
@@ -794,104 +1270,111 @@
 
   // ===== End online subtitle search =====
 
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    (async () => {
-      try {
-        if (!msg || !msg.type) return;
+  // chrome.runtime can be undefined when this script is injected into a
+  // sandboxed iframe (e.g. ad/player frames) or after the extension context
+  // is invalidated by a reload. Guard so we don't throw on load.
+  if (chrome && chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+      (async () => {
+        try {
+          if (!msg || !msg.type) return;
 
-        if (msg.type === "NSPLUS_OPEN_ONLINE_MODAL") {
-          buildOnlineModal();
-          sendResponse({ ok: true });
-          return;
-        }
-
-        if (msg.type === "NSPLUS_DETECT_TITLE") {
-          sendResponse({ ok: true, info: detectTitleInfo() });
-          return;
-        }
-
-        if (msg.type === "NSPLUS_PING") {
-          sendResponse({
-            ok: true,
-            version: EXT_VERSION,
-            page: { href: location.href, titleKey: getTitleKey() },
-            enabled: STATE.enabled,
-            hasCues: STATE.cues.length > 0,
-            state: STATE,
-          });
-          return;
-        }
-
-        if (msg.type === "NSPLUS_SET_ENABLED") {
-          msg.enabled ? enable() : disable();
-          sendResponse({ ok: true });
-          return;
-        }
-
-        if (msg.type === "NSPLUS_LOAD_SUBTITLES") {
-          const { text, fileName } = msg;
-          try {
-            if (!text || typeof text !== "string") {
-              throw new Error(
-                chrome.i18n.getMessage("noFileLoaded") ||
-                  "Invalid subtitle text: not a string or empty",
-              );
-            }
-            const cues = window.SubtitleParser.parseSubtitles(text, fileName);
-            if (!Array.isArray(cues)) {
-              throw new Error(
-                chrome.i18n.getMessage("fileNotLoaded") ||
-                  "Parser returned invalid cues format",
-              );
-            }
-            if (cues.length === 0) {
-              throw new Error(
-                chrome.i18n.getMessage("fileNotLoaded") ||
-                  "No subtitles found in file. Check file format and encoding.",
-              );
-            }
-            setCues(cues);
-            enable();
-            await saveSettings({ scope: "title" });
-            sendResponse({ ok: true, cues: cues.length });
+          if (msg.type === "NSPLUS_OPEN_ONLINE_MODAL") {
+            buildOnlineModal();
+            sendResponse({ ok: true });
             return;
-          } catch (parseErr) {
+          }
+
+          if (msg.type === "NSPLUS_DETECT_TITLE") {
+            const info = await detectTitleInfo();
+            sendResponse({ ok: true, info });
+            return;
+          }
+
+          if (msg.type === "NSPLUS_PING") {
             sendResponse({
-              ok: false,
-              error: `Failed to parse subtitles: ${String(parseErr)}`,
+              ok: true,
+              version: EXT_VERSION,
+              page: { href: location.href, titleKey: getTitleKey() },
+              enabled: STATE.enabled,
+              hasCues: STATE.cues.length > 0,
+              state: STATE,
             });
             return;
           }
-        }
 
-        if (msg.type === "NSPLUS_UPDATE_SETTINGS") {
-          const s = msg.settings || {};
-          if (typeof s.offsetMs === "number") STATE.offsetMs = s.offsetMs;
-          if (typeof s.fontSizePx === "number") STATE.fontSizePx = s.fontSizePx;
-          if (typeof s.bottomPx === "number") STATE.bottomPx = s.bottomPx;
-          if (typeof s.bgOpacity === "number") STATE.bgOpacity = s.bgOpacity;
-          // languageLabel removed
+          if (msg.type === "NSPLUS_SET_ENABLED") {
+            msg.enabled ? enable() : disable();
+            sendResponse({ ok: true });
+            return;
+          }
 
-          applyStyles();
-          await saveSettings({
-            scope: msg.scope === "global" ? "global" : "title",
-          });
-          sendResponse({ ok: true });
-          return;
-        }
+          if (msg.type === "NSPLUS_LOAD_SUBTITLES") {
+            const { text, fileName } = msg;
+            try {
+              if (!text || typeof text !== "string") {
+                throw new Error(
+                  chrome.i18n.getMessage("noFileLoaded") ||
+                    "Invalid subtitle text: not a string or empty",
+                );
+              }
+              const cues = window.SubtitleParser.parseSubtitles(text, fileName);
+              if (!Array.isArray(cues)) {
+                throw new Error(
+                  chrome.i18n.getMessage("fileNotLoaded") ||
+                    "Parser returned invalid cues format",
+                );
+              }
+              if (cues.length === 0) {
+                throw new Error(
+                  chrome.i18n.getMessage("fileNotLoaded") ||
+                    "No subtitles found in file. Check file format and encoding.",
+                );
+              }
+              setCues(cues);
+              enable();
+              await saveSettings({ scope: "title" });
+              sendResponse({ ok: true, cues: cues.length });
+              return;
+            } catch (parseErr) {
+              sendResponse({
+                ok: false,
+                error: `Failed to parse subtitles: ${String(parseErr)}`,
+              });
+              return;
+            }
+          }
 
-        if (msg.type === "NSPLUS_CLEAR_CUES") {
-          setCues([]);
-          disable();
-          sendResponse({ ok: true });
-          return;
+          if (msg.type === "NSPLUS_UPDATE_SETTINGS") {
+            const s = msg.settings || {};
+            if (typeof s.offsetMs === "number") STATE.offsetMs = s.offsetMs;
+            if (typeof s.fontSizePx === "number")
+              STATE.fontSizePx = s.fontSizePx;
+            if (typeof s.bottomPx === "number") STATE.bottomPx = s.bottomPx;
+            if (typeof s.bgOpacity === "number") STATE.bgOpacity = s.bgOpacity;
+            // languageLabel removed
+
+            applyStyles();
+            await saveSettings({
+              scope: msg.scope === "global" ? "global" : "title",
+            });
+            sendResponse({ ok: true });
+            return;
+          }
+
+          if (msg.type === "NSPLUS_CLEAR_CUES") {
+            setCues([]);
+            disable();
+            sendResponse({ ok: true });
+            return;
+          }
+        } catch (err) {
+          sendResponse({ ok: false, error: String(err) });
         }
-      } catch (err) {
-        sendResponse({ ok: false, error: String(err) });
-      }
-    })();
-    return true;
-  });
+      })();
+      return true;
+    });
+  }
 
   async function init() {
     hookHistory();
